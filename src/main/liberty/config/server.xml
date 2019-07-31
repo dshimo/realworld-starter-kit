@@ -1,7 +1,7 @@
 <server description="Sample Liberty server">
 
     <featureManager>
-        <feature>microProfile-2.0</feature>
+        <feature>microProfile-2.2</feature>
     </featureManager>
 
     <httpEndpoint httpPort="${default.http.port}" httpsPort="${default.https.port}"
@@ -9,9 +9,26 @@
 
     <quickStartSecurity userName="admin" userPassword="password"/>
     
-    <webApplication name="test" location="${app.location}">
-    	<!-- enable visibility to third party apis -->
-    	<classloader apiTypeVisibility="api,ibm-api,spec,stable,third-party"/>
-  	</webApplication>
+    <application name="RealWorld" location="${appLocation}" type="war" context-root="/">
+        <application-bnd>
+            <security-role name="admin">
+                <group name="myAdmins" />
+            </security-role>
+            <security-role name="user">
+                <group name="myUsers" />
+            </security-role>
+        </application-bnd>
+    </application>
+      
+    <!-- Derby Library Configuration -->
+    <library id="derbyJDBCLib">
+        <fileset dir="${shared.resource.dir}" includes="derby*.jar" />
+    </library>
+
+    <!-- Datasource Configuration -->
+    <dataSource id="eventjpadatasource" jndiName="jdbc/eventjpadatasource">
+        <jdbcDriver libraryRef="derbyJDBCLib" />
+        <properties.derby.embedded databaseName="EventDB" createDatabase="create" />
+    </dataSource>
 
 </server>
