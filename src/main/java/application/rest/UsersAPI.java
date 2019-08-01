@@ -24,20 +24,36 @@ import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 
 import org.eclipse.microprofile.jwt.Claims;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
+import java.security.Principal;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.json.JSONObject;
 
+import com.ibm.websphere.security.jwt.InvalidBuilderException;
+import com.ibm.websphere.security.jwt.InvalidClaimException;
+import com.ibm.websphere.security.jwt.InvalidConsumerException;
+import com.ibm.websphere.security.jwt.InvalidTokenException;
+import com.ibm.websphere.security.jwt.JwtConsumer;
+import com.ibm.websphere.security.jwt.JwtException;
+import com.ibm.websphere.security.jwt.JwtHeaderInjecter;
+import com.ibm.websphere.security.jwt.JwtToken;
+import com.ibm.websphere.security.jwt.KeyException;
+
 import DAO.UserDAO;
 import core.user.User;
+import security.JwtGenerator;
+import security.SessionUtils;
 
 import javax.enterprise.context.RequestScoped;
 
@@ -50,12 +66,28 @@ public class UsersAPI {
 
     @Inject
     private JsonWebToken jwtToken;
+    
+    private JwtGenerator jwtGenerator;
 
     @GET
     @Path("/test")
     @Produces(MediaType.TEXT_PLAIN)
-    public Response hello() {
-        return Response.ok().build();
+    public Response hello(@Context SecurityContext sec) throws Exception {
+    	HttpServletRequest request = SessionUtils.getRequest();
+    	
+    	
+    	jwtGenerator = new JwtGenerator();
+    	Principal user = sec.getUserPrincipal();
+    	System.out.println(jwtGenerator.getToken("prince"));
+    	
+    	
+    	HttpSession ses = request.getSession();
+    	
+    	ses.setAttribute("jwt", jwtGenerator.getToken("prince"));
+
+        return Response.ok()
+        			   .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization")
+        			   .build();
     }
 
     // @OPTIONS
@@ -65,28 +97,28 @@ public class UsersAPI {
     //             .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
     //             .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization").build();
     // }
-
-    // /**
-    //  * This method creates a new user from the submitted data (email, username,
-    //  * password, bio and image) by the user.
-    //  */
-    // @POST
-    // @Consumes(MediaType.APPLICATION_JSON)
-    // @Produces(MediaType.APPLICATION_JSON)
-    // @Transactional
-    // public Response createNewUser(@Context HttpServletRequest httpRequest, String requestBody) {
-
-    //     JSONObject obj = new JSONObject(requestBody);
-    //     JSONObject user = obj.getJSONObject("user");
-    //     User newUser = new User(user.getString("email"), user.getString("username"), user.getString("password"), "", "");
-    //     userDAO.createUser(newUser);
-    //     return Response.status(Response.Status.CREATED).header("Access-Control-Allow-Origin", "*")
-    //             .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
-    //             .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization")
-    //             // .entity(userResponse(new AuthUser(newUser, getToken(newUser))))
-    //             .build();
-
-    // }
+//
+//     /**
+//      * This method creates a new user from the submitted data (email, username,
+//      * password, bio and image) by the user.
+//      */
+//     @POST
+//     @Consumes(MediaType.APPLICATION_JSON)
+//     @Produces(MediaType.APPLICATION_JSON)
+//     @Transactional
+//     public Response createNewUser(@Context HttpServletRequest httpRequest, String requestBody) {
+//
+//         JSONObject obj = new JSONObject(requestBody);
+//         JSONObject user = obj.getJSONObject("user");
+//         User newUser = new User(user.getString("email"), user.getString("username"), user.getString("password"), "", "");
+//         userDAO.createUser(newUser);
+//         return Response.status(Response.Status.CREATED).header("Access-Control-Allow-Origin", "*")
+//                 .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
+//                 .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization")
+//                 // .entity(userResponse(new AuthUser(newUser, getToken(newUser))))
+//                 .build();
+//
+//     }
 
     // @OPTIONS
     // @Path("login")

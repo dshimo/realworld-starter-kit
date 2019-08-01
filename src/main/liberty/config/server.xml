@@ -2,12 +2,22 @@
 
     <featureManager>
         <feature>microProfile-2.2</feature>
+        <feature>jwt-1.0</feature>
+        <feature>mpJwt-1.1</feature>
     </featureManager>
-
+    
+    <mpJwt 
+	     keyName="mpJwtValidationKey"
+	     issuer="http://localhost:9080/RealWorld"
+	     audiences ="conferenceService">
+	</mpJwt>
+    
     <httpEndpoint httpPort="${default.http.port}" httpsPort="${default.https.port}"
                   id="defaultHttpEndpoint" host="*"/>
 
     <quickStartSecurity userName="admin" userPassword="password"/>
+    
+    <keyStore id="defaultKeyStore" password="yourPassword" />
     
     <application name="RealWorld" location="${appLocation}" type="war" context-root="/">
         <application-bnd>
@@ -30,5 +40,7 @@
         <jdbcDriver libraryRef="derbyJDBCLib" />
         <properties.derby.embedded databaseName="EventDB" createDatabase="create" />
     </dataSource>
+    
+	<jwtConsumer id="defaultJWTConsumer" issuer="http://localhost:9080/RealWorld" trustStoreRef="defaultKeyStore" trustAliasName="certificate_alias"></jwtConsumer>
 
 </server>

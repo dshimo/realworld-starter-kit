@@ -33,6 +33,12 @@
             <type>pom</type>
         </dependency>
         <dependency>
+        	<groupId>io.openliberty.features</groupId>
+        	<artifactId>jwt-1.0</artifactId>
+        	<version>19.0.0.7</version>
+        	<type>esa</type>
+        </dependency>
+        <dependency>
             <groupId>javax.ws.rs</groupId>
             <artifactId>javax.ws.rs-api</artifactId>
             <version>2.0.1</version>
