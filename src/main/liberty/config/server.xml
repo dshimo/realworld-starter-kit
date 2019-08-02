@@ -2,6 +2,7 @@
 
     <featureManager>
         <feature>microProfile-2.2</feature>
+        <feature>jpa-2.2</feature>
     </featureManager>
 
     <httpEndpoint httpPort="${default.http.port}" httpsPort="${default.https.port}"
@@ -26,9 +27,10 @@
     </library>
 
     <!-- Datasource Configuration -->
-    <dataSource id="eventjpadatasource" jndiName="jdbc/eventjpadatasource">
+    <dataSource id="userjpadatasource" 
+                jndiName="jdbc/derby">
         <jdbcDriver libraryRef="derbyJDBCLib" />
-        <properties.derby.embedded databaseName="EventDB" createDatabase="create" />
+        <properties.derby.embedded databaseName="UserDB" createDatabase="create" />
     </dataSource>
 
 </server>

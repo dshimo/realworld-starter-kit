@@ -12,27 +12,34 @@ import javax.enterprise.context.RequestScoped;
 @RequestScoped
 public class UserDAO {
 
-  @PersistenceContext(name = "jpa-unit")
-  private EntityManager em;
+    @PersistenceContext(name = "jpa-unit")
+    private EntityManager em;
 
-  public void createUser(User user) {
-    em.persist(user);
-  }
+    public void createUser(User user) {
+        try {
+            System.out.println(em);
+            em.persist(user);
+            System.out.println("Success!");
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println("out of createUser");
+    }
 
-  public User findUser(String userID) {
-    return em.find(User.class, userID);
-  }
+    public User findUser(String userID) {
+        return em.find(User.class, userID);
+    }
 
-  public void updateUser(User user) {
-    em.merge(user);
-  }
+    public void updateUser(User user) {
+        em.merge(user);
+    }
 
-  public void deleteUser(User user) {
-    em.remove(user);
-  }
+    public void deleteUser(User user) {
+        em.remove(user);
+    }
 
-  public List<User> findAllUsers() {
-    return em.createNamedQuery("Users.findAllUsers", User.class).getResultList();
-  }
+    public List<User> findAllUsers() {
+        return em.createNamedQuery("Users.findAllUsers", User.class).getResultList();
+    }
 
 }

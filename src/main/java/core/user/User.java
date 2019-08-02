@@ -10,11 +10,11 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.enterprise.context.RequestScoped;
-import javax.inject.Inject;
+// import javax.inject.Inject;
 import javax.persistence.Column;
 import javax.persistence.GenerationType;
 
-import org.eclipse.microprofile.jwt.Claim;
+// import org.eclipse.microprofile.jwt.Claim;
 
 @Entity
 @Table(name = "Users")
@@ -31,9 +31,9 @@ public class User implements Serializable {
     @Column(name = "userID")
     private String userID;
 
-    @Inject
-    @Claim("email")
-    @Column(name = "userEmail")
+    // @Inject
+    // @Claim("email")
+    @Column(name = "email")
     private String email;
 
     @Column(name = "username")
@@ -61,27 +61,27 @@ public class User implements Serializable {
     }
 
     public String getID() {
-        return userID;
+        return this.userID;
     }
 
     public String getBio() {
-        return bio;
+        return this.bio;
     }
 
     public String getEmail() {
-        return email;
+        return this.email;
     }
 
     public String getUsername() {
-        return username;
+        return this.username;
     }
 
     public String getPassword() {
-        return password;
+        return this.password;
     }
 
     public String getImage() {
-        return image;
+        return this.image;
     }
 
     public void setEmail(String email) {
