@@ -10,7 +10,7 @@
  *     IBM Corporation - Initial implementation
  *******************************************************************************/
 // end::copyright[]
-package application.rest;
+package application.rest.api;
 
 import javax.inject.Inject;
 import javax.servlet.ServletException;
@@ -51,14 +51,16 @@ import com.ibm.websphere.security.jwt.JwtToken;
 import com.ibm.websphere.security.jwt.KeyException;
 
 import DAO.UserDAO;
+import core.user.AuthUser;
 import core.user.User;
 import security.JwtGenerator;
-import security.SessionUtils;
 
 import javax.enterprise.context.RequestScoped;
 
+import static javax.ws.rs.core.HttpHeaders.AUTHORIZATION;
+
 @RequestScoped
-@Path("/user")
+@Path("/users")
 public class UsersAPI {
 
     @Inject
@@ -73,20 +75,16 @@ public class UsersAPI {
     @Path("/test")
     @Produces(MediaType.TEXT_PLAIN)
     public Response hello(@Context SecurityContext sec) throws Exception {
-    	HttpServletRequest request = SessionUtils.getRequest();
-    	
     	
     	jwtGenerator = new JwtGenerator();
+    	
     	Principal user = sec.getUserPrincipal();
     	System.out.println(jwtGenerator.getToken("prince"));
     	
-    	
-    	HttpSession ses = request.getSession();
-    	
-    	ses.setAttribute("jwt", jwtGenerator.getToken("prince"));
+    	System.out.println(user);
 
         return Response.ok()
-        			   .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization")
+        			   .header(AUTHORIZATION, "Bearer " + jwtGenerator.getToken("prince"))
         			   .build();
     }
 
@@ -97,28 +95,34 @@ public class UsersAPI {
     //             .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
     //             .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization").build();
     // }
-//
-//     /**
-//      * This method creates a new user from the submitted data (email, username,
-//      * password, bio and image) by the user.
-//      */
-//     @POST
-//     @Consumes(MediaType.APPLICATION_JSON)
-//     @Produces(MediaType.APPLICATION_JSON)
-//     @Transactional
-//     public Response createNewUser(@Context HttpServletRequest httpRequest, String requestBody) {
-//
-//         JSONObject obj = new JSONObject(requestBody);
-//         JSONObject user = obj.getJSONObject("user");
-//         User newUser = new User(user.getString("email"), user.getString("username"), user.getString("password"), "", "");
-//         userDAO.createUser(newUser);
-//         return Response.status(Response.Status.CREATED).header("Access-Control-Allow-Origin", "*")
-//                 .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
-//                 .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization")
-//                 // .entity(userResponse(new AuthUser(newUser, getToken(newUser))))
-//                 .build();
-//
-//     }
+
+     /**
+      * This method creates a new user from the submitted data (email, username,
+      * password, bio and image) by the user.
+     * @throws KeyException 
+     * @throws InvalidClaimException 
+     * @throws InvalidBuilderException 
+     * @throws JwtException 
+      */
+     @POST
+     @Consumes(MediaType.APPLICATION_JSON)
+     @Produces(MediaType.APPLICATION_JSON)
+     @Transactional
+     public Response createNewUser(String requestBody) throws JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
+
+         JSONObject obj = new JSONObject(requestBody);
+         JSONObject user = obj.getJSONObject("user");
+         User newUser = new User(user.getString("email"), user.getString("username"), user.getString("password"), "", "");
+         userDAO.createUser(newUser);
+         jwtGenerator = new JwtGenerator();
+         return Response.status(Response.Status.CREATED)
+        		 .header("Access-Control-Allow-Origin", "*")
+                 .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
+                 .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization")
+                 .entity(userResponse(new AuthUser(newUser, jwtGenerator.getToken("prince"))))
+                 .build();
+
+     }
 
     // @OPTIONS
     // @Path("login")
@@ -169,5 +173,18 @@ public class UsersAPI {
     //     // System.out.println("Something went wrong! " + e);
     //     return null;
     // }
+     
+ 	private Map<String, Object> userResponse(AuthUser authUser) {
+		return new HashMap<String, Object>() {
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
+			{
+				put("user", authUser);
+			}
+		};
+	}
     
 }

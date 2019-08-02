@@ -28,6 +28,8 @@ public class JwtGenerator {
 	   // audience, expiration time, not before, subject, signing key or algorithm, jti
 	    jwtBuilder = jwtBuilder.signWith("HS256", "shared secret");
 	    
+	    jwtBuilder = jwtBuilder.claim("name", "prince");
+	    
 	   // Overwrite or set any additional claims
 	    jwtBuilder = jwtBuilder.claim(Claims.SUBJECT, username);
 

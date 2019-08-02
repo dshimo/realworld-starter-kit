@@ -4,6 +4,7 @@
         <feature>microProfile-2.2</feature>
         <feature>jwt-1.0</feature>
         <feature>mpJwt-1.1</feature>
+        <feature>jpa-2.2</feature>
     </featureManager>
     
     <mpJwt 
@@ -30,16 +31,18 @@
         </application-bnd>
     </application>
       
-    <!-- Derby Library Configuration -->
-    <library id="derbyJDBCLib">
-        <fileset dir="${shared.resource.dir}" includes="derby*.jar" />
-    </library>
+  <!-- Derby Library Configuration -->
+  <library id="derbyJDBCLib">
+      <fileset dir="${shared.resource.dir}" includes="derby*.jar"/>
+  </library>
 
-    <!-- Datasource Configuration -->
-    <dataSource id="eventjpadatasource" jndiName="jdbc/eventjpadatasource">
-        <jdbcDriver libraryRef="derbyJDBCLib" />
-        <properties.derby.embedded databaseName="EventDB" createDatabase="create" />
-    </dataSource>
+  <!-- Datasource Configuration -->
+  <dataSource id="eventjpadatasource"
+              jndiName="jdbc/eventjpadatasource">
+      <jdbcDriver libraryRef="derbyJDBCLib" />
+      <properties.derby.embedded databaseName="EventDB" createDatabase="create"/>
+  </dataSource>
+
     
 	<jwtConsumer id="defaultJWTConsumer" issuer="http://localhost:9080/RealWorld" trustStoreRef="defaultKeyStore" trustAliasName="certificate_alias"></jwtConsumer>
 
