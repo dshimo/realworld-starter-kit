@@ -5,12 +5,11 @@ import com.ibm.websphere.security.jwt.InvalidBuilderException;
 import com.ibm.websphere.security.jwt.InvalidClaimException;
 import com.ibm.websphere.security.jwt.JwtBuilder;
 import com.ibm.websphere.security.jwt.JwtException;
-import com.ibm.websphere.security.jwt.JwtToken;
 import com.ibm.websphere.security.jwt.KeyException;
 
 public class JwtGenerator {
 
-    public JwtToken getToken(String username)
+    public String getToken(String newUser)
         throws JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
         // 1. Create a JWTBuilder Object.
         JwtBuilder jb = JwtBuilder.create();
@@ -22,7 +21,7 @@ public class JwtGenerator {
 
         // Overwrite any of the following
         // audience, expiration time, not before, subject, signing key or algorithm, jti
-        jb.subject(username);
+        jb.subject(newUser);
     
         // jwtBuilder = jwtBuilder.signWith("HS256", "shared secret");
 
@@ -30,7 +29,7 @@ public class JwtGenerator {
         // jwtBuilder = jwtBuilder.claim(Claims.SUBJECT, username);
 
         // 2. Create a JWT token
-        return jb.buildJwt();
+        return jb.buildJwt().compact();
     }
 
 }

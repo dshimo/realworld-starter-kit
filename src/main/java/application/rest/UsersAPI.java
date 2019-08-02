@@ -15,6 +15,7 @@ package application.rest;
 import javax.inject.Inject;
 // import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 // import javax.servlet.http.HttpServletResponse;
 // import javax.servlet.http.HttpSession;
 import javax.transaction.Transactional;
@@ -30,6 +31,7 @@ import javax.ws.rs.core.Response;
 
 import com.ibm.websphere.security.jwt.InvalidBuilderException;
 import com.ibm.websphere.security.jwt.InvalidClaimException;
+import com.ibm.websphere.security.jwt.JwtBuilder;
 import com.ibm.websphere.security.jwt.JwtException;
 import com.ibm.websphere.security.jwt.JwtToken;
 import com.ibm.websphere.security.jwt.KeyException;
@@ -43,8 +45,12 @@ import com.ibm.websphere.security.jwt.KeyException;
 import org.json.JSONObject;
 
 import DAO.UserDAO;
+import core.user.AuthUser;
 import core.user.User;
 import security.JwtGenerator;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.enterprise.context.RequestScoped;
 
@@ -65,8 +71,7 @@ public class UsersAPI {
     @Produces(MediaType.TEXT_PLAIN)
     public Response hello() throws JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
         String username = "david";  
-        JwtToken jwt = jg.getToken(username);
-        return Response.ok(jwt.compact()).build();
+        return Response.ok(jg.getToken(username)).build();
     }
 
     @GET
@@ -93,12 +98,18 @@ public class UsersAPI {
     /**
      * This method creates a new user from the submitted data (email, username,
      * password, bio and image) by the user.
+     * 
+     * @throws KeyException
+     * @throws InvalidClaimException
+     * @throws InvalidBuilderException
+     * @throws JwtException
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
-    public Response createNewUser(@Context HttpServletRequest httpRequest, String requestBody) {
+    public Response createNewUser(@Context HttpServletRequest httpRequest, String requestBody)
+            throws JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
         JSONObject obj = new JSONObject(requestBody);
         JSONObject user = obj.getJSONObject("user");
         User newUser = new User(user.getString("email"), user.getString("username"), user.getString("password"), "", "");
@@ -107,7 +118,7 @@ public class UsersAPI {
             .header("Access-Control-Allow-Origin", "*")
             .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
             .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization")
-            // .entity(userResponse(new AuthUser(newUser, getToken(newUser))))
+            .entity(userResponse(new AuthUser(newUser, jg.getToken(newUser.getUsername()))))
             .build();
 
     }
@@ -121,45 +132,41 @@ public class UsersAPI {
     //             .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization").build();
     // }
 
-    // @POST
-    // @Path("login")
-    // @Consumes(MediaType.APPLICATION_JSON)
-    // @Produces(MediaType.APPLICATION_JSON)
-    // @Transactional
-    // public Response loginUser(@Context HttpServletRequest request, @Context HttpServletResponse response,
-    //     //     String requestBody) throws Exception {
-    //     // JSONObject obj = new JSONObject(requestBody);
-    //     // JSONObject user = obj.getJSONObject("user");
-    //     User loginUser = userDAO.findByEmail(user.getString("email"));
-    //     if (loginUser != null && user.getString("password").equals(loginUser.getPassword())) {
+    @POST
+    @Path("login")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
+    public Response loginUser(@Context HttpServletRequest request, @Context HttpServletResponse response, 
+        String requestBody) throws Exception {
+        JSONObject obj = new JSONObject(requestBody);
+        JSONObject user = obj.getJSONObject("user");
+        User loginUser = new User();
+        // User loginUser = userDAO.findByEmail(user.getString("email"));
+        if (loginUser != null && user.getString("password").equals(loginUser.getPassword())) {
 
-    //         return Response.status(Response.Status.CREATED).header("Access-Control-Allow-Origin", "*")
-    //                 .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
-    //                 .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization")
-    //                 // .entity(userResponse(new AuthUser(loginUser,
-    //                 // request.getHeader("authorization"))))
-    //                 .build();
-    //     } else {
-    //         return Response.status(Response.Status.NOT_FOUND).entity("User does not exist!")
-    //                 .header("Access-Control-Allow-Origin", "*")
-    //                 .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
-    //                 .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization").build();
-    //     }
-    // }
+            return Response.status(Response.Status.CREATED).header("Access-Control-Allow-Origin", "*")
+                    .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
+                    .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization")
+                    // .entity(userResponse(new AuthUser(loginUser,
+                    // request.getHeader("authorization"))))
+                    .build();
+        } else {
+            return Response.status(Response.Status.NOT_FOUND).entity("User does not exist!")
+                    .header("Access-Control-Allow-Origin", "*")
+                    .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
+                    .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization").build();
+        }
+    }
 
-    // private String getToken(User loginUser) {
-    //     // try {
-    //     // JwtBuilder jwtBuilder = JwtBuilder.create();
-    //     // jwtBuilder.subject(loginUser.getEmail()).claim(Claims.sub.toString(),
-    //     // loginUser.getUsername())
-    //     // .claim("upn", loginUser.getUsername()) // MP-JWT defined subject claim
-    //     // .claim("customClaim", "customValue");
-    //     // JwtToken goToken = jwtBuilder.buildJwt();
-    //     // String jwtTokenString = goToken.compact();
-    //     // return jwtTokenString;
-    //     // } catch (Exception e) {
-    //     // System.out.println("Something went wrong! " + e);
-    //     return null;
-    // }
+    private Map<String, Object> userResponse(AuthUser authUser) {
+        return new HashMap<String, Object>() {
+            private static final long serialVersionUID = 1L;
+
+            {
+                put("user", authUser);
+            }
+        };
+    }
     
 }
