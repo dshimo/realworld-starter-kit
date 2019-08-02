@@ -10,7 +10,7 @@
  *     IBM Corporation - Initial implementation
  *******************************************************************************/
 // end::copyright[]
-package application.rest;
+package application.rest.api;
 
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;

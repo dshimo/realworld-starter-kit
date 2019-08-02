@@ -21,6 +21,7 @@ import javax.persistence.GenerationType;
 @NamedQueries({
     @NamedQuery(name = "Users.findAllUsers", query = "SELECT u FROM User u"),
     @NamedQuery(name = "Users.findUser", query = "SELECT u FROM User u WHERE u.username = :username"),
+    @NamedQuery(name = "Users.findByUsername", query = "SELECT u FROM User u WHERE u.username = :username"),
     @NamedQuery(name = "Users.findByEmail", query = "SELECT u FROM User u WHERE u.email = :email")
 })
 @RequestScoped
