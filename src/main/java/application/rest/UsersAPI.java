@@ -13,34 +13,26 @@
 package application.rest;
 
 import javax.inject.Inject;
-// import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-// import javax.servlet.http.HttpServletResponse;
-// import javax.servlet.http.HttpSession;
 import javax.transaction.Transactional;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-// import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.SecurityContext;
 
 import com.ibm.websphere.security.jwt.InvalidBuilderException;
 import com.ibm.websphere.security.jwt.InvalidClaimException;
-import com.ibm.websphere.security.jwt.JwtBuilder;
+import com.ibm.websphere.security.jwt.InvalidConsumerException;
+import com.ibm.websphere.security.jwt.InvalidTokenException;
 import com.ibm.websphere.security.jwt.JwtException;
-import com.ibm.websphere.security.jwt.JwtToken;
 import com.ibm.websphere.security.jwt.KeyException;
 
-// import org.eclipse.microprofile.jwt.Claims;
-// import org.eclipse.microprofile.jwt.JsonWebToken;
-
-// import java.util.HashMap;
-// import java.util.Map;
+import static javax.ws.rs.core.HttpHeaders.AUTHORIZATION;
 
 import org.json.JSONObject;
 
@@ -50,6 +42,7 @@ import core.user.User;
 import security.JwtGenerator;
 
 import java.util.HashMap;
+
 import java.util.Map;
 
 import javax.enterprise.context.RequestScoped;
@@ -58,42 +51,10 @@ import javax.enterprise.context.RequestScoped;
 @Path("/users")
 public class UsersAPI {
 
-    private JwtGenerator jg = new JwtGenerator();
-
     @Inject
     private UserDAO userDAO;
 
-    // @Inject
-    // private JsonWebToken jwtToken;
-
-    @GET
-    @Path("/test")
-    @Produces(MediaType.TEXT_PLAIN)
-    public Response hello() throws JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
-        String username = "david";  
-        return Response.ok(jg.getToken(username)).build();
-    }
-
-    @GET
-    @Path("/work")
-    public Response test() {
-        return Response.ok("It works!").build();
-    }
-
-    // @GET
-    // @Produces(MediaType.APPLICATION_JSON)
-    // public Response getUser() {
-
-    //     User newUser = new User(email, username, password, bio, image));
-    // }
-
-    // @OPTIONS
-    // @Produces(MediaType.TEXT_PLAIN)
-    // public Response getSimple() {
-    //     return Response.ok().header("Access-Control-Allow-Origin", "*")
-    //             .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
-    //             .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization").build();
-    // }
+    private JwtGenerator jwtGenerator = new JwtGenerator();;
 
     /**
      * This method creates a new user from the submitted data (email, username,
@@ -103,34 +64,29 @@ public class UsersAPI {
      * @throws InvalidClaimException
      * @throws InvalidBuilderException
      * @throws JwtException
+     * @throws InvalidConsumerException 
+     * @throws InvalidTokenException 
      */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
-    public Response createNewUser(@Context HttpServletRequest httpRequest, String requestBody)
-            throws JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
+    public Response createNewUser(@Context HttpServletRequest httpRequest, String requestBody, @Context SecurityContext securityContext)
+            throws JwtException, InvalidBuilderException, InvalidClaimException, KeyException, InvalidConsumerException, InvalidTokenException {
         JSONObject obj = new JSONObject(requestBody);
         JSONObject user = obj.getJSONObject("user");
         User newUser = new User(user.getString("email"), user.getString("username"), user.getString("password"), "", "");
         userDAO.createUser(newUser);
+        String jwtToken = jwtGenerator.getToken(user.getString("username")); 
+        
         return Response.status(Response.Status.CREATED)
             .header("Access-Control-Allow-Origin", "*")
             .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
             .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization")
-            .entity(userResponse(new AuthUser(newUser, jg.getToken(newUser.getUsername()))))
+            .header(AUTHORIZATION, "Bearer " + jwtToken)
+            .entity(userResponse(new AuthUser(newUser, jwtToken)))
             .build();
-
     }
-
-    // @OPTIONS
-    // @Path("login")
-    // @Produces(MediaType.TEXT_PLAIN)
-    // public Response getLogin() {
-    //     return Response.ok().header("Access-Control-Allow-Origin", "*")
-    //             .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
-    //             .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization").build();
-    // }
 
     @POST
     @Path("login")
@@ -141,21 +97,19 @@ public class UsersAPI {
         String requestBody) throws Exception {
         JSONObject obj = new JSONObject(requestBody);
         JSONObject user = obj.getJSONObject("user");
-        User loginUser = new User();
-        // User loginUser = userDAO.findByEmail(user.getString("email"));
+        User loginUser = userDAO.findByEmail(user.getString("email"));
+        String jwtToken = jwtGenerator.getToken(loginUser.getUsername()); 
+        
         if (loginUser != null && user.getString("password").equals(loginUser.getPassword())) {
-
             return Response.status(Response.Status.CREATED).header("Access-Control-Allow-Origin", "*")
-                    .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
-                    .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization")
-                    // .entity(userResponse(new AuthUser(loginUser,
-                    // request.getHeader("authorization"))))
-                    .build();
+		                   .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
+		                   .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization")
+		                   .entity(userResponse(new AuthUser(loginUser, jwtToken)))
+		                   .build();
         } else {
-            return Response.status(Response.Status.NOT_FOUND).entity("User does not exist!")
-                    .header("Access-Control-Allow-Origin", "*")
-                    .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
-                    .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization").build();
+            return Response.status(Response.Status.NOT_FOUND)
+	            		   .entity("User does not exist!")
+	            		   .build();
         }
     }
 
@@ -168,5 +122,4 @@ public class UsersAPI {
             }
         };
     }
-    
 }

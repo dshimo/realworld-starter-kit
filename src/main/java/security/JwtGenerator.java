@@ -22,8 +22,12 @@ public class JwtGenerator {
         // Overwrite any of the following
         // audience, expiration time, not before, subject, signing key or algorithm, jti
         jb.subject(newUser);
-    
-        // jwtBuilder = jwtBuilder.signWith("HS256", "shared secret");
+        
+        jb.claim("upn", newUser);
+   
+        jb.signWith("HS256", "shared secret");
+        
+        jb.issuer("localhost:9080");
 
         // Overwrite or set any additional claims
         // jwtBuilder = jwtBuilder.claim(Claims.SUBJECT, username);

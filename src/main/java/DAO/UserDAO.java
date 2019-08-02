@@ -17,17 +17,20 @@ public class UserDAO {
 
     public void createUser(User user) {
         try {
-            System.out.println(em);
             em.persist(user);
-            System.out.println("Success!");
         } catch(Exception e) {
             e.printStackTrace();
         }
-        System.out.println("out of createUser");
     }
 
     public User findUser(String userID) {
         return em.find(User.class, userID);
+    }
+    
+    public User findByEmail(String email) {
+        return em.createNamedQuery("Users.findByEmail", User.class)       	
+        		 .setParameter("email", email)
+        		 .getSingleResult();
     }
 
     public void updateUser(User user) {
@@ -39,7 +42,8 @@ public class UserDAO {
     }
 
     public List<User> findAllUsers() {
-        return em.createNamedQuery("Users.findAllUsers", User.class).getResultList();
+        return em.createNamedQuery("Users.findAllUsers", User.class)
+        		 .getResultList();
     }
 
 }

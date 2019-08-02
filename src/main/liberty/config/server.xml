@@ -3,6 +3,7 @@
     <featureManager>
         <feature>microProfile-2.2</feature>
         <feature>jpa-2.2</feature>
+        <feature>mpJwt-1.1</feature>
     </featureManager>
 
     <httpEndpoint httpPort="${default.http.port}" httpsPort="${default.https.port}"
@@ -32,5 +33,8 @@
         <jdbcDriver libraryRef="derbyJDBCLib" />
         <properties.derby.embedded databaseName="UserDB" createDatabase="create" />
     </dataSource>
+    
+    <!-- The MP JWT configuration that injects the caller's JWT into a ResourceScoped bean for inspection. -->
+    <mpJwt id="jwtUserConsumer" keyName="default" audiences="simpleapp" issuer="localhost:9080"/>
 
 </server>
