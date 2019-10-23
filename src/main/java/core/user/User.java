@@ -20,7 +20,9 @@ import javax.persistence.GenerationType;
 @Table(name = "Users")
 @NamedQueries({
     @NamedQuery(name = "Users.findAllUsers", query = "SELECT u FROM User u"),
-    @NamedQuery(name = "Users.findUser", query = "SELECT u FROM User u WHERE u.username = :username")
+    @NamedQuery(name = "Users.findUser", query = "SELECT u FROM User u WHERE u.username = :username"),
+    @NamedQuery(name = "Users.findByUsername", query = "SELECT u FROM User u WHERE u.username = :username"),
+    @NamedQuery(name = "Users.findByEmail",  query = "SELECT u FROM User u WHERE u.email = :email")
 })
 @RequestScoped
 public class User implements Serializable {
