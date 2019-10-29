@@ -12,37 +12,45 @@
 // end::copyright[]
 package application.rest;
 
+import java.util.ArrayList;
+import java.util.List;
+
+// import java.util.HashMap;
+// import java.util.Map;
+
+import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import javax.json.bind.Jsonb;
+import javax.json.bind.JsonbBuilder;
 import javax.transaction.Transactional;
 import javax.ws.rs.Consumes;
+// import javax.servlet.http.HttpServletRequest;
+// import javax.servlet.http.HttpServletResponse;
+// import javax.transaction.Transactional;
+// import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.ibm.websphere.security.jwt.InvalidBuilderException;
-import com.ibm.websphere.security.jwt.InvalidClaimException;
-import com.ibm.websphere.security.jwt.JwtException;
-import com.ibm.websphere.security.jwt.KeyException;
-
-import org.eclipse.microprofile.jwt.JsonWebToken;
-
 import org.json.JSONObject;
 
+import core.user.Users;
+
+// import com.ibm.websphere.security.jwt.InvalidBuilderException;
+// import com.ibm.websphere.security.jwt.InvalidClaimException;
+// import com.ibm.websphere.security.jwt.JwtException;
+// import com.ibm.websphere.security.jwt.KeyException;
+
+// import org.eclipse.microprofile.jwt.JsonWebToken;
+
+// import org.json.JSONObject;
+
 import dao.UserDao;
-import core.user.AuthUser;
-import core.user.User;
-import security.JwtGenerator;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.enterprise.context.RequestScoped;
+// import core.user.AuthUser;
+// import security.JwtGenerator;
 
 @RequestScoped
 @Path("/users")
@@ -50,8 +58,8 @@ public class UsersAPI {
 
     // private JwtGenerator jg = new JwtGenerator();
 
-    // @Inject
-    // private UserDAO userDAO;
+    @Inject
+    private UserDao userDao;
 
     // @Inject
     // private JsonWebToken jwtToken;
@@ -59,14 +67,14 @@ public class UsersAPI {
     @GET
     @Path("/work")
     public Response test() {
-        return Response.ok("It works!").build();
+        return Response.ok("Working endpoint.").build();
     }
 
     // @GET
     // @Path("/testToken")
     // @Produces(MediaType.TEXT_PLAIN)
     // public Response hello() throws JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
-    //     String username = "david";  
+    //     String username = "david";
     //     return Response.ok(jg.getToken(username)).build();
     // }
 
@@ -77,6 +85,16 @@ public class UsersAPI {
     //             .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
     //             .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization").build();
     // }
+
+    // Register User Endpoint
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.TEXT_PLAIN)
+    @Transactional
+    public Response createSimpleUser(Users users) {
+        System.out.println(users.getUser());
+        return Response.ok().build();
+    }
 
     /**
      * This method creates a new user from the submitted data (email, username,
@@ -103,7 +121,6 @@ public class UsersAPI {
     //         .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization")
     //         .entity(userResponse(new AuthUser(newUser, jg.getToken(newUser.getUsername()))))
     //         .build();
-
     // }
 
     // @POST
