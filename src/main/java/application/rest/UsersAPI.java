@@ -12,22 +12,17 @@
 // end::copyright[]
 package application.rest;
 
-import java.util.ArrayList;
 import java.util.List;
-
-// import java.util.HashMap;
-// import java.util.Map;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.bind.Jsonb;
 import javax.json.bind.JsonbBuilder;
+import javax.print.attribute.standard.Media;
 import javax.transaction.Transactional;
 import javax.ws.rs.Consumes;
 // import javax.servlet.http.HttpServletRequest;
 // import javax.servlet.http.HttpServletResponse;
-// import javax.transaction.Transactional;
-// import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -35,8 +30,14 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.ibm.websphere.security.jwt.InvalidBuilderException;
+import com.ibm.websphere.security.jwt.InvalidClaimException;
+import com.ibm.websphere.security.jwt.JwtException;
+import com.ibm.websphere.security.jwt.KeyException;
+
 import org.json.JSONObject;
 
+import core.user.User;
 import core.user.Users;
 
 // import com.ibm.websphere.security.jwt.InvalidBuilderException;
@@ -49,14 +50,13 @@ import core.user.Users;
 // import org.json.JSONObject;
 
 import dao.UserDao;
-// import core.user.AuthUser;
-// import security.JwtGenerator;
+import security.JwtGenerator;
 
 @RequestScoped
 @Path("/users")
 public class UsersAPI {
 
-    // private JwtGenerator jg = new JwtGenerator();
+    private JwtGenerator tknGenerator = new JwtGenerator();
 
     @Inject
     private UserDao userDao;
@@ -65,35 +65,46 @@ public class UsersAPI {
     // private JsonWebToken jwtToken;
 
     @GET
-    @Path("/work")
+    @Path("/test")
     public Response test() {
         return Response.ok("Working endpoint.").build();
     }
 
-    // @GET
-    // @Path("/testToken")
-    // @Produces(MediaType.TEXT_PLAIN)
-    // public Response hello() throws JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
-    //     String username = "david";
-    //     return Response.ok(jg.getToken(username)).build();
-    // }
+    @GET
+    @Path("/testToken")
+    @Produces(MediaType.TEXT_PLAIN)
+    public Response token() throws JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
+        String username = "david";
+        return Response.ok(tknGenerator.getToken(username)).build();
+    }
 
-    // @OPTIONS
-    // @Produces(MediaType.TEXT_PLAIN)
-    // public Response getSimple() {
-    //     return Response.ok().header("Access-Control-Allow-Origin", "*")
-    //             .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
-    //             .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization").build();
-    // }
-
-    // Register User Endpoint
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Response createSimpleUser(Users users) {
-        System.out.println(users.getUser());
-        return Response.ok().build();
+        User user = users.getUser();
+        if (user.getUsername() == null || user.getPassword() == null || user.getEmail() == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .entity("Request must contain a username, email, and password")
+                .build();
+        }
+        String output = "temporary";
+        System.out.println(user);
+        userDao.createUser(user);   // Persist
+
+        return Response.status(Response.Status.CREATED).entity(output).build();
+    }
+
+    @GET
+    @Path("/getUser")
+    @Transactional
+    public Response returnUser() {
+        List<User> users = userDao.findAllUsers();
+
+        System.out.println(users);
+        
+        return Response.ok(users).build();
     }
 
     /**

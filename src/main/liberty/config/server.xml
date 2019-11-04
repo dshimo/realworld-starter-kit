@@ -8,17 +8,17 @@
     <httpEndpoint httpPort="${default.http.port}" httpsPort="${default.https.port}"
                   id="defaultHttpEndpoint" host="*"/>
 
-    <quickStartSecurity userName="admin" userPassword="password"/>
+    <!-- <quickStartSecurity userName="admin" userPassword="password"/> -->
     
     <application name="RealWorld" location="${appLocation}" type="war" context-root="/">
-        <application-bnd>
+        <!-- <application-bnd>
             <security-role name="admin">
                 <group name="myAdmins" />
             </security-role>
             <security-role name="user">
                 <group name="myUsers" />
             </security-role>
-        </application-bnd>
+        </application-bnd> -->
     </application>
       
     <!-- Derby Library Configuration -->
@@ -27,8 +27,8 @@
     </library>
 
     <!-- Datasource Configuration -->
-    <dataSource id="userjpadatasource" 
-                jndiName="jdbc/derby">
+    <dataSource id="RealWorldSource" 
+                jndiName="jdbc/RealWorldSource">
         <jdbcDriver libraryRef="derbyJDBCLib" />
         <properties.derby.embedded databaseName="UserDB" createDatabase="create" />
     </dataSource>
