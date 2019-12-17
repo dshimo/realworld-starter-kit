@@ -17,12 +17,14 @@ import java.util.List;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.json.Json;
+import javax.print.attribute.standard.Media;
 import javax.transaction.Transactional;
 import javax.ws.rs.Consumes;
 // import javax.servlet.http.HttpServletRequest;
 // import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
@@ -71,12 +73,15 @@ public class UsersAPI {
     }
 
     @GET
-    @Path("/buildJSON")
-    public Response test2() {
-        userDao.buildJson("1");
-        return Response.ok("See console.").build();
+    @Path("/deleteUser/{id}")
+    @Produces(MediaType.TEXT_PLAIN)
+    @Transactional
+    public Response deleteUser(@PathParam("id") String id) {
+        userDao.deleteUser(id);
+        return Response.ok("Delete request received.").build();
     }
 
+    /* Registration */
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -117,11 +122,7 @@ public class UsersAPI {
         return Response.status(Response.Status.CREATED).entity(body.toString()).build();
     }
 
-    private JSONObject addToken(JSONObject json, String username)
-            throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
-        return json.put("token", tknGenerator.getToken(username));
-    }
-
+    /* Get Current User */
     @GET
     @Path("/getUser")
     @Produces(MediaType.APPLICATION_JSON)
@@ -131,106 +132,17 @@ public class UsersAPI {
         return Response.ok(users).build();
     }
 
-    // @GET
-    // @Path("/getUser/{username}")
-    // @Produces(MediaType.APPLICATION_JSON)
-    // @Transactional
-    // public Response loadUserInfo(@PathParam("username") String username) {
-    //     System.out.println("Received request to retrieve username: " + username);
-    //     User user = userDao.loadUserInfo(username);
-    //     System.out.println("User: " + user);
-    //     System.out.println("Pizzacat is not real.");
-    //     return Response.ok(user).build();
-    // }
-
-    @GET
-    @Path("/deleteUser/{id}")
-    @Produces(MediaType.TEXT_PLAIN)
-    @Transactional
-    public Response deleteUser(@PathParam("id") String id) {
-        userDao.deleteUser(id);
-        return Response.ok("Delete request received.").build();
+    /* Update User */
+    @PUT
+    @Path("/user")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateUser() {
+        return Response.ok().build();
     }
 
-    // private Json buildBody() {
-    //     Json body = new Json();
+    private JSONObject addToken(JSONObject json, String username)
+            throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
+        return json.put("token", tknGenerator.getToken(username));
+    }
 
-    // }
-
-    // private String produceToken(String username)
-    //         throws JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
-    //     return tknGenerator.getToken(username);
-    // }
-
-
-    /**
-     * This method creates a new user from the submitted data (email, username,
-     * password, bio and image) by the user.
-     * 
-     * @throws KeyException
-     * @throws InvalidClaimException
-     * @throws InvalidBuilderException
-     * @throws JwtException
-     */
-    // @POST
-    // @Consumes(MediaType.APPLICATION_JSON)
-    // @Produces(MediaType.APPLICATION_JSON)
-    // @Transactional
-    // public Response createNewUser(@Context HttpServletRequest httpRequest, String requestBody)
-    //         throws JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
-    //     JSONObject obj = new JSONObject(requestBody);
-    //     JSONObject user = obj.getJSONObject("user");
-    //     User newUser = new User(user.getString("email"), user.getString("username"), user.getString("password"), "", "");
-    //     userDAO.createUser(newUser);
-    //     return Response.status(Response.Status.CREATED)
-    //         .header("Access-Control-Allow-Origin", "*")
-    //         .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
-    //         .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization")
-    //         .entity(userResponse(new AuthUser(newUser, jg.getToken(newUser.getUsername()))))
-    //         .build();
-    // }
-
-    // @POST
-    // @Path("login")
-    // @Consumes(MediaType.APPLICATION_JSON)
-    // @Produces(MediaType.APPLICATION_JSON)
-    // @Transactional
-    // public Response loginUser(@Context HttpServletRequest request, @Context HttpServletResponse response, 
-    //     String requestBody) throws Exception {
-    //     JSONObject obj = new JSONObject(requestBody);
-    //     JSONObject user = obj.getJSONObject("user");
-    //     User loginUser = userDAO.findByEmail(user.getString("email"));
-    //     if (loginUser != null && user.getString("password").equals(loginUser.getPassword())) {
-    //         return Response.status(Response.Status.CREATED).header("Access-Control-Allow-Origin", "*")
-    //                 .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
-    //                 .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization")
-    //                 .entity(userResponse(new AuthUser(loginUser,
-    //                 request.getHeader("authorization"))))
-    //                 .build();
-    //     } else {
-    //         return Response.status(Response.Status.NOT_FOUND).entity("Email could not be found.")
-    //                 .header("Access-Control-Allow-Origin", "*")
-    //                 .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
-    //                 .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With, Authorization").build();
-    //     }
-    // }
-
-    // private Map<String, Object> userResponse(AuthUser authUser) {
-    //     return new HashMap<String, Object>() {
-    //         private static final long serialVersionUID = 1L;
-    //         {
-    //             put("user", authUser);
-    //         }
-    //     };
-    // }
-
-    // @GET
-    // @Path("/testToken")
-    // @Produces(MediaType.TEXT_PLAIN)
-    // public Response token() throws JwtException, InvalidBuilderException,
-    // InvalidClaimException, KeyException {
-    // String username = "david";
-    // return Response.ok(tknGenerator.getToken(username)).build();
-    // }
-    
 }
