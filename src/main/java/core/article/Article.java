@@ -1,6 +1,9 @@
 package core.article;
 
 import java.util.List;
+
+import org.json.JSONObject;
+
 import core.user.Profile;
 
 public class Article {
@@ -90,6 +93,19 @@ public class Article {
 
     public void setAuthor(Profile author) {
         this.author = author;
+    }
+
+    public JSONObject toJson() {
+        return new JSONObject()
+            .put("slug", slug)
+            .put("title", title)
+            .put("description", description)
+            .put("tagList", tagList)
+            .put("createdAt", createdAt)
+            .put("updatedAt", updatedAt)
+            .put("favorited", favorited)
+            .put("favoritesCount", favoritesCount)
+            .put("author", author);
     }
 
 }

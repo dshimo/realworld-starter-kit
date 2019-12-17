@@ -1,5 +1,7 @@
 package core.user;
 
+import org.json.JSONObject;
+
 public class Profile {
     private String username;
     private String bio;
@@ -36,5 +38,13 @@ public class Profile {
 
     public void setFollowing(Boolean following) {
         this.following = following;
+    }
+
+    public JSONObject toJson() {
+        return new JSONObject()
+            .put("username", username)
+            .put("bio", bio)
+            .put("image", image == null ? JSONObject.NULL : image)
+            .put("following", following);
     }
 }

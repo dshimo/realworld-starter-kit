@@ -1,5 +1,7 @@
 package core.comments;
 
+import org.json.JSONObject;
+
 import core.user.Profile;
 
 public class Comment {
@@ -41,5 +43,14 @@ public class Comment {
 
     public void setAuthor(Profile author) {
         this.author = author;
+    }
+
+    public JSONObject toJson() {
+        return new JSONObject()
+            .put("id", id)
+            .put("createdAt", createdAt)
+            .put("updatedAt", updatedAt)
+            .put("body", body)
+            .put("author", author);
     }
 }

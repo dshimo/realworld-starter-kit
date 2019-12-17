@@ -2,6 +2,8 @@ package core.article;
 
 import java.util.List;
 
+import org.json.JSONObject;
+
 public class Articles {
     private List<Article> articles;
     private int articlesCount;
@@ -20,5 +22,11 @@ public class Articles {
 
     public void setArticlesCount(int articlesCount) {
         this.articlesCount = articlesCount;
+    }
+
+    public JSONObject toJson() {
+        return new JSONObject()
+            .put("articles", articles)
+            .put("articlesCount", articlesCount);
     }
 }
