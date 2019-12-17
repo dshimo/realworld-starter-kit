@@ -7,24 +7,23 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+
+import org.json.JSONObject;
 
 @Entity
 @Table(name = "Users")
-@NamedQuery(name = "User.findAllUsers", query = "SELECT u FROM User u")
 public class User implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @GeneratedValue(strategy = GenerationType.TABLE)
     @Id
-    @Column(name = "id")
     private String id;
 
-    @Column(name = "email", nullable = false)
+    @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(name = "username")
+    @Column(name = "username", nullable = false, unique = true)
     private String username;
 
     @Column(name = "userPassword", nullable = false)
@@ -35,6 +34,10 @@ public class User implements Serializable {
 
     @Column(name = "image", nullable = true)
     private String image;
+
+    public String getId() {
+        return id;
+    }
 
     public String getEmail() {
         return email;
@@ -78,7 +81,20 @@ public class User implements Serializable {
 
     @Override
     public String toString() {
-        return "User: [Email = " + email + ", Username = " + username + ", Bio = " + bio + 
-            ", Image = " + image + "]";
+        String json = new JSONObject()
+            .put("email", email)
+            .put("username", username)
+            .put("bio", bio == null ? JSONObject.NULL : bio)
+            .put("image", image == null ? JSONObject.NULL : image)
+            .toString();
+        return json;
+    }
+
+    public JSONObject toJson() {
+        return new JSONObject()
+            .put("email", email)
+            .put("username", username)
+            .put("bio", bio == null ? JSONObject.NULL : bio)
+            .put("image", image == null ? JSONObject.NULL : image);
     }
 }
