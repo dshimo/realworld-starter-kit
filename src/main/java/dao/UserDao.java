@@ -52,11 +52,9 @@ public class UserDao {
     }
 
     public User findByUsername(String username) {
-        List<User> users = em.createQuery("SELECT u FROM User u WHERE u.username = :username", User.class)
+        return em.createQuery("SELECT u FROM User u WHERE u.username = :username", User.class)
             .setParameter("username", username)
-            .getResultList();
-
-        return users.iterator().next();
+            .getSingleResult();
     }
 
     public boolean emailExists(String email) {
@@ -72,7 +70,7 @@ public class UserDao {
     }
 
     public List<User> findAllUsers() {
-        return em.createQuery("SELECT u.email, u.username, u.bio, u.image FROM User u")
+        return em.createQuery("SELECT u FROM User u", User.class)
             .getResultList();
     }
 
