@@ -1,15 +1,3 @@
-// tag::copyright[]
-/*******************************************************************************
- * Copyright (c) 2018 IBM Corporation and others.
- * All rights reserved. This program and the accompanying materials
- * are made available under the terms of the Eclipse Public License v1.0
- * which accompanies this distribution, and is available at
- * http://www.eclipse.org/legal/epl-v10.html
- *
- * Contributors:
- *     IBM Corporation - Initial implementation
- *******************************************************************************/
-// end::copyright[]
 package application.rest;
 
 import java.util.List;
@@ -18,8 +6,6 @@ import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import javax.ws.rs.Consumes;
-// import javax.servlet.http.HttpServletRequest;
-// import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -40,14 +26,7 @@ import org.json.JSONObject;
 import core.user.User;
 import core.user.Users;
 
-// import com.ibm.websphere.security.jwt.InvalidBuilderException;
-// import com.ibm.websphere.security.jwt.InvalidClaimException;
-// import com.ibm.websphere.security.jwt.JwtException;
-// import com.ibm.websphere.security.jwt.KeyException;
-
 // import org.eclipse.microprofile.jwt.JsonWebToken;
-
-// import org.json.JSONObject;
 
 import dao.UserDao;
 import security.JwtGenerator;
