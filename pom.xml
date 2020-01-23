@@ -13,7 +13,7 @@
     <properties>
         <maven.compiler.target>1.8</maven.compiler.target>
         <maven.compiler.source>1.8</maven.compiler.source>
-        <testServerHttpPort>9080</testServerHttpPort>
+        <testServerHttpPort>4100</testServerHttpPort>
         <testServerHttpsPort>9443</testServerHttpsPort>
         <warContext>realworld</warContext>
         <packaging.type>usr</packaging.type>
@@ -145,7 +145,7 @@
                     <assemblyArtifact>
                         <groupId>io.openliberty</groupId>
                         <artifactId>openliberty-runtime</artifactId>
-                        <version>19.0.0.7</version>
+                        <version>19.0.0.12</version>
                         <type>zip</type>
                     </assemblyArtifact>
                     <configFile>src/main/liberty/config/server.xml</configFile>
