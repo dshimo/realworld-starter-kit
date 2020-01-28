@@ -37,12 +37,23 @@ public class UserDao {
         return em.find(User.class, userID);
     }
 
-    // public void updateUser(User user) {
-    //     em.merge(user);
-    // }
+    public User updateUser(User user, String userId) {
+        User dbUser = em.find(User.class, userId);
+        // Update username for ... repeat for all necessary fields?
+        dbUser.setUsername(user.getUsername());
+        em.merge(user);
+        return dbUser;
+    }
 
     public void deleteUser(String id) {
         em.remove(em.find(User.class, id));
+    }
+
+    public User login(String email, String password) {
+        return em.createQuery("SELECT u FROM User u WHERE u.email = :email AND u.password = :password", User.class)
+            .setParameter("email", email)
+            .setParameter("password", password)
+            .getSingleResult();
     }
 
     public boolean userExists(String username) {      // em.contains does not work

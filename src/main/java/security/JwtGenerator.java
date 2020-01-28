@@ -9,7 +9,7 @@ import com.ibm.websphere.security.jwt.KeyException;
 
 public class JwtGenerator {
 
-    public String getToken(String newUser)
+    public String getToken(String newUser, String userId)
         throws JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
 
         // 1. Create a JWTBuilder Object.
@@ -18,10 +18,11 @@ public class JwtGenerator {
         // Overwrite any of the following
         // audience, expiration time, not before, subject, signing key or algorithm, jti
         jb.subject(newUser);
+        jb.issuer("https://192.168.1.15:9443/jwt/defaultJWT");
 
         jb.claim("upn", newUser);
-        jb.issuer("https://192.168.1.15:9443/jwt/defaultJWT");
         jb.claim("groups", "users");
+        jb.claim("id", userId);
 
         // 2. Create a JWT token
         return jb.buildJwt().compact();

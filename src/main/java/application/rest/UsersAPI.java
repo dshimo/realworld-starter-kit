@@ -1,8 +1,5 @@
 package application.rest;
 
-import core.user.User;
-import core.user.Users;
-
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.enterprise.context.RequestScoped;
@@ -28,12 +25,14 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import core.user.User;
+import core.user.Users;
 import dao.UserDao;
 import security.JwtGenerator;
 
 @RequestScoped
-@RolesAllowed("users")
 @Path("/")
+@RolesAllowed("users")
 public class UsersAPI {
 
     private JwtGenerator tknGenerator = new JwtGenerator();
@@ -45,45 +44,29 @@ public class UsersAPI {
     private JsonWebToken jwtToken;
 
     @GET
-    @Path("/test")
-    public Response test() {
-        return Response.ok("Working endpoint.").build();
-    }
-
-    // @GET
-    // @Path("/deleteUser/{id}")
-    // @Produces(MediaType.TEXT_PLAIN)
-    // @Transactional
-    // public Response deleteUser(@PathParam("id") String id) {
-    // userDao.deleteUser(id);
-    // return Response.ok("Delete request received.").build();
-    // }
-
-    @GET
     @Path("/token")
-    @Produces(MediaType.APPLICATION_JSON)
     @PermitAll
+    @Produces(MediaType.APPLICATION_JSON)
     public Response makeToken()
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
-        String username = "dshi";
-        JSONObject json = new JSONObject();
-        return Response.ok(addToken(json, username).toString()).build();
-
+        String username = "It was me, Dio!";
+        return Response.ok(generateToken(username, "1")).build();
     }
 
-    /* Registration */
+    /* Register */
     @POST
     @Path("/users")
+    @PermitAll
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
-    @PermitAll
-    public Response createSimpleUser(Users users)
+    public Response createSimpleUser(Users requestBody)
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
         System.out.println("Creating simple user.");
-        User user = users.getUser();
+        User user = requestBody.getUser();
         String username = user.getUsername();
         String email = user.getEmail();
+        String userId = user.getId();
 
         // Required fields
         if (username == null || email == null || user.getPassword() == null) {
@@ -103,38 +86,83 @@ public class UsersAPI {
 
         userDao.createUser(user); // Persist
 
-        JSONObject body = new JSONObject().put("user", addToken(userDao.findUser(user.getId()).toJson(), username));
+        JSONObject body = wrapUser(userDao.findUser(userId).toJson(), username, userId);
 
         return Response.status(Response.Status.CREATED).entity(body.toString()).build();
     }
 
-    @GET
-    @Path("/user")
+    /* Login */
+    @POST
+    @Path("/users/login")
+    @PermitAll
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     @Transactional
-    public Response currentUser() throws InvalidTokenException, InvalidConsumerException {
-        
-        String username = jwtToken.getSubject();
+    public Response loginUser(Users requestBody)
+            throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
 
-        // Authenticate
-        // Check database
-        // Retrieve user and return
+        System.out.println("Logging in");
 
-        return Response.ok("Username is " + username).build();
+        User loginInfo = requestBody.getUser();
+        String email = loginInfo.getEmail();
+        String password = loginInfo.getPassword();
+
+        if (email == null || password == null) {
+            return Response.status(Response.Status.BAD_REQUEST).entity("Please include both email and password.")
+                    .build();
+        }
+
+        JSONObject body = userDao.login(loginInfo.getEmail(), loginInfo.getPassword()).toJson();
+        if (body == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("User with matching email and password not found.")
+                    .build();
+        }
+
+        return Response.status(Response.Status.CREATED)
+                .entity(wrapUser(body, body.getString("username"), "placeholder").toString())
+                .build();
     }
 
-    // /* Update User */
-    // @PUT
-    // @Path("/user")
-    // @Produces(MediaType.APPLICATION_JSON)
-    // public Response updateUser() {
-    //     return Response.ok().build();
-    // }
+    /* Current User */
+    @GET
+    @Path("/user")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
+    public Response getCurrent() throws InvalidTokenException, InvalidConsumerException, JSONException, JwtException,
+            InvalidBuilderException, InvalidClaimException, KeyException {
+
+        String username = jwtToken.getSubject();
+        String id = jwtToken.getClaim("id");
+        JSONObject body = userDao.findUser(id).toJson();
+            
+        if (body == null) {
+            return Response.status(Response.Status.NOT_FOUND).entity("Token provides incorrect userId").build();
+        }
+
+        return Response.status(Response.Status.ACCEPTED).entity(wrapUser(body, username, id).toString()).build();
+    }
+
+    /* Update User */
+    @PUT
+    @Path("/user")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response update(Users requestBody) {
+        JSONObject body = userDao.updateUser(requestBody.getUser(), jwtToken.getClaim("id")).toJson();
+        return Response.status(Response.Status.CREATED).entity(body.toString()).build();
+    }
 
 
-
-    private JSONObject addToken(JSONObject json, String username)
+    private JSONObject wrapUser(JSONObject user, String username, String userId)
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
-        return json.put("token", tknGenerator.getToken(username));
+        user.put("token", generateToken(username, userId));
+        return new JSONObject().put("user", user);
+    }
+
+    private String generateToken(String username, String userId)
+            throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
+        return tknGenerator.getToken(username, userId);
     }
 
 }

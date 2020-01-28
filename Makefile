@@ -2,7 +2,7 @@ test:
 	echo "pizza"
 
 install:
-	mvn clean install
+	mvn clean install -DskipTests
 
 dropins:
 	cp utility/com.ibm.ws.security.mp.jwt_1.0.37.jar target/liberty/wlp/lib/
