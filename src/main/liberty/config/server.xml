@@ -3,23 +3,12 @@
     <featureManager>
         <feature>microProfile-2.2</feature>
         <feature>jpa-2.2</feature>
-        <!-- <feature>usr:</feature> -->
     </featureManager>
 
     <httpEndpoint httpPort="${default.http.port}" httpsPort="${default.https.port}"
                   id="defaultHttpEndpoint" host="*"/>
-
-    <!-- <quickStartSecurity userName="admin" userPassword="password"/> -->
     
     <application name="RealWorld" location="${appLocation}" type="war" context-root="/">
-        <!-- <application-bnd>
-            <security-role name="admin">
-                <group name="myAdmins" />
-            </security-role>
-            <security-role name="user">
-                <group name="myUsers" />
-            </security-role>
-        </application-bnd> -->
     </application>
       
     <!-- Derby Library Configuration -->
@@ -35,6 +24,6 @@
     </dataSource>
 
     <!-- MP JWT configuration -->
-    <mpJwt id="jwtConfig" issuer="https://192.168.1.15:9443/jwt/defaultJWT" />
+    <mpJwt id="jwtHandler" issuer="https://192.168.1.15:9443/jwt/defaultJWT" />
 
 </server>

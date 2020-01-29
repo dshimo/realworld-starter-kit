@@ -25,6 +25,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import application.errors.ValidationMessages;
 import core.user.User;
 import core.user.Users;
 import dao.UserDao;
@@ -62,33 +63,39 @@ public class UsersAPI {
     @Transactional
     public Response createSimpleUser(Users requestBody)
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
+
         System.out.println("Creating simple user.");
         User user = requestBody.getUser();
         String username = user.getUsername();
         String email = user.getEmail();
-        String userId = user.getId();
 
         // Required fields
-        if (username == null || email == null || user.getPassword() == null) {
-            return Response.status(Response.Status.BAD_REQUEST)
-                    .entity("Username, email, or password must not be null or empty.").build();
+        if (username.equals("") || email.equals("") || user.getPassword().equals("")) {
+            return Response.status(422)
+                .entity(ValidationMessages.throwError(ValidationMessages.REGISTRATION_REQUIREMENTS_BLANK))
+                .build();
         }
 
         // Check duplicate username/email in database
         if (userDao.userExists(username)) {
             System.out.println("User exists!");
-            return Response.status(Response.Status.BAD_REQUEST).entity("Username already exists.").build();
+            return Response.status(422)
+                .entity(ValidationMessages.throwError(ValidationMessages.DUPLICATE_USERNAME))
+                .build();
         }
         if (userDao.emailExists(email)) {
             System.out.println("Email exists!");
-            return Response.status(Response.Status.BAD_REQUEST).entity("Email already exists.").build();
+            return Response.status(422)
+                .entity(ValidationMessages.throwError(ValidationMessages.DUPLICATE_EMAIL))
+                .build();
         }
 
         userDao.createUser(user); // Persist
+        String userId = user.getId();
 
-        JSONObject body = wrapUser(userDao.findUser(userId).toJson(), username, userId);
-
-        return Response.status(Response.Status.CREATED).entity(body.toString()).build();
+        return Response.status(Response.Status.CREATED)
+            .entity(wrapUser(userDao.findUser(userId).toJson(), username, userId))
+            .build();
     }
 
     /* Login */
@@ -107,20 +114,29 @@ public class UsersAPI {
         String email = loginInfo.getEmail();
         String password = loginInfo.getPassword();
 
-        if (email == null || password == null) {
-            return Response.status(Response.Status.BAD_REQUEST).entity("Please include both email and password.")
-                    .build();
+        if (email.equals("") || password.equals("")) {
+            return Response.status(422)
+                .entity(ValidationMessages.throwError(ValidationMessages.LOGIN_REQUIREMENTS_BLANK))
+                .build();
         }
 
-        JSONObject body = userDao.login(loginInfo.getEmail(), loginInfo.getPassword()).toJson();
+        if (! userDao.emailExists(email)) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(ValidationMessages.throwError(ValidationMessages.EMAIL_NOT_FOUND))
+                .build();
+        }
+
+        User user = userDao.login(loginInfo.getEmail(), loginInfo.getPassword());
+        JSONObject body = user.toJson();
         if (body == null) {
-            return Response.status(Response.Status.NOT_FOUND).entity("User with matching email and password not found.")
-                    .build();
+            return Response.status(422)
+                .entity(ValidationMessages.throwError(ValidationMessages.LOGIN_FAIL))
+                .build();
         }
 
         return Response.status(Response.Status.CREATED)
-                .entity(wrapUser(body, body.getString("username"), "placeholder").toString())
-                .build();
+            .entity(wrapUser(body, body.getString("username"), user.getId()))
+            .build();
     }
 
     /* Current User */
@@ -137,10 +153,14 @@ public class UsersAPI {
         JSONObject body = userDao.findUser(id).toJson();
             
         if (body == null) {
-            return Response.status(Response.Status.NOT_FOUND).entity("Token provides incorrect userId").build();
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity("Token provides incorrect userId")
+                .build();
         }
 
-        return Response.status(Response.Status.ACCEPTED).entity(wrapUser(body, username, id).toString()).build();
+        return Response.status(Response.Status.ACCEPTED)
+            .entity(wrapUser(body, username, id))
+            .build();
     }
 
     /* Update User */
@@ -154,10 +174,10 @@ public class UsersAPI {
     }
 
 
-    private JSONObject wrapUser(JSONObject user, String username, String userId)
+    private String wrapUser(JSONObject user, String username, String userId)
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
         user.put("token", generateToken(username, userId));
-        return new JSONObject().put("user", user);
+        return new JSONObject().put("user", user).toString();
     }
 
     private String generateToken(String username, String userId)

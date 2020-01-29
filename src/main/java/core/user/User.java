@@ -79,6 +79,24 @@ public class User implements Serializable {
         this.image = image;
     }
 
+    public void update(String email, String username, String password, String bio, String image) {
+        if (! "".equals(email)) {
+            this.email = email;
+        }
+        if (! "".equals(username)) {
+            this.username = username;
+        }
+        if (! "".equals(password)) {
+            this.password = password;
+        }
+        if (! "".equals(bio)) {
+            this.bio = bio;
+        }
+        if (! "".equals(image)) {
+            this.image = image;
+        }
+    }
+
     @Override
     public String toString() {
         String json = new JSONObject()
@@ -96,5 +114,13 @@ public class User implements Serializable {
             .put("username", username)
             .put("bio", bio == null ? JSONObject.NULL : bio)
             .put("image", image == null ? JSONObject.NULL : image);
+    }
+
+    public JSONObject toProfile() {
+        return new JSONObject()
+            .put("username", username)
+            .put("bio", bio)
+            .put("image", image == null ? JSONObject.NULL : image)
+            .put("following", "I'll figure this out later");
     }
 }
