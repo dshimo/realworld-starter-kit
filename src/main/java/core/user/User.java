@@ -1,16 +1,20 @@
 package core.user;
 
 import java.io.Serializable;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
 import org.json.JSONObject;
 
+// User contains Profile
 @Entity
 @Table(name = "Users")
 public class User implements Serializable {
@@ -18,7 +22,7 @@ public class User implements Serializable {
 
     @GeneratedValue(strategy = GenerationType.TABLE)
     @Id
-    private String id;
+    private Long id;
 
     @Column(name = "email", nullable = false, unique = true)
     private String email;
@@ -35,7 +39,10 @@ public class User implements Serializable {
     @Column(name = "image", nullable = true)
     private String image;
 
-    public String getId() {
+    @OneToMany
+    private Set<User> following = new HashSet<User>();
+
+    public Long getId() {
         return id;
     }
 
@@ -79,6 +86,18 @@ public class User implements Serializable {
         this.image = image;
     }
 
+    public Boolean checkFollowing(User celeb) {
+        return following.contains(celeb);
+    }
+
+    public void follow(User celeb) {
+        following.add(celeb);
+    }
+
+    public void unfollow(User celeb) {
+        following.remove(celeb);
+    }
+
     public void update(String email, String username, String password, String bio, String image) {
         if (! "".equals(email)) {
             this.email = email;
@@ -97,6 +116,7 @@ public class User implements Serializable {
         }
     }
 
+    // In case you needed to print the User to verify
     @Override
     public String toString() {
         String json = new JSONObject()
@@ -114,13 +134,14 @@ public class User implements Serializable {
             .put("username", username)
             .put("bio", bio == null ? JSONObject.NULL : bio)
             .put("image", image == null ? JSONObject.NULL : image);
+            // JWT is provided at API
     }
 
-    public JSONObject toProfile() {
+    public JSONObject toProfileJson() {
         return new JSONObject()
             .put("username", username)
-            .put("bio", bio)
-            .put("image", image == null ? JSONObject.NULL : image)
-            .put("following", "I'll figure this out later");
+            .put("bio", bio == null ? JSONObject.NULL : bio)
+            .put("image", image == null ? JSONObject.NULL : image);
+            // Follow logic is applied at API
     }
 }

@@ -5,7 +5,6 @@ import java.util.List;
 import javax.enterprise.context.RequestScoped;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
-import org.json.JSONObject;
 
 import core.user.User;
 
@@ -25,15 +24,7 @@ public class UserDao {
         System.out.println("Exiting createUser");
     }
 
-    public JSONObject buildJson(String userID) {
-        User traits = em
-            .createQuery("SELECT u FROM User u WHERE u.id = :userID", User.class)
-            .setParameter("userID", userID)
-            .getSingleResult();
-        return traits.toJson();
-    }
-
-    public User findUser(String userID) {
+    public User findUser(Long userID) {
         return em.find(User.class, userID);
     }
 

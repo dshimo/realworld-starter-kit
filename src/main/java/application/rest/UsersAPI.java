@@ -42,17 +42,7 @@ public class UsersAPI {
     private UserDao userDao;
 
     @Inject
-    private JsonWebToken jwtToken;
-
-    @GET
-    @Path("/token")
-    @PermitAll
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response makeToken()
-            throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
-        String username = "It was me, Dio!";
-        return Response.ok(generateToken(username, "1")).build();
-    }
+    private JsonWebToken jwt;
 
     /* Register */
     @POST
@@ -91,7 +81,7 @@ public class UsersAPI {
         }
 
         userDao.createUser(user); // Persist
-        String userId = user.getId();
+        Long userId = user.getId();
 
         return Response.status(Response.Status.CREATED)
             .entity(wrapUser(userDao.findUser(userId).toJson(), username, userId))
@@ -148,8 +138,8 @@ public class UsersAPI {
     public Response getCurrent() throws InvalidTokenException, InvalidConsumerException, JSONException, JwtException,
             InvalidBuilderException, InvalidClaimException, KeyException {
 
-        String username = jwtToken.getSubject();
-        String id = jwtToken.getClaim("id");
+        String username = jwt.getSubject();
+        Long id = jwt.getClaim("id");
         JSONObject body = userDao.findUser(id).toJson();
             
         if (body == null) {
@@ -169,18 +159,18 @@ public class UsersAPI {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response update(Users requestBody) {
-        JSONObject body = userDao.updateUser(requestBody.getUser(), jwtToken.getClaim("id")).toJson();
+        JSONObject body = userDao.updateUser(requestBody.getUser(), jwt.getClaim("id")).toJson();
         return Response.status(Response.Status.CREATED).entity(body.toString()).build();
     }
 
 
-    private String wrapUser(JSONObject user, String username, String userId)
+    private String wrapUser(JSONObject user, String username, Long userId)
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
         user.put("token", generateToken(username, userId));
         return new JSONObject().put("user", user).toString();
     }
 
-    private String generateToken(String username, String userId)
+    private String generateToken(String username, Long userId)
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
         return tknGenerator.getToken(username, userId);
     }
