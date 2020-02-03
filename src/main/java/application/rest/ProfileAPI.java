@@ -73,8 +73,11 @@ public class ProfileAPI {
     @Transactional
     public Response unfollowUser(@PathParam("username") String username) {
         User profile = userDao.findByUsername(username);
-
-        return Response.ok().build();
+        User requestUser = userDao.findUser(jwt.getClaim("id"));
+        requestUser.unfollow(profile);
+        JSONObject body = profile.toProfileJson();
+        body.put("following", requestUser.checkFollowing(profile));
+        return Response.ok(new JSONObject().put("profile", body).toString()).build();
     }
 
 }
