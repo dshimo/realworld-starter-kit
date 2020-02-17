@@ -1,7 +1,5 @@
 package dao;
 
-import java.util.List;
-
 import javax.enterprise.context.RequestScoped;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -42,12 +40,12 @@ public class UserDao {
 
     public User login(String email, String password) {
         return em.createQuery("SELECT u FROM User u WHERE u.email = :email AND u.password = :password", User.class)
-            .setParameter("email", email)
-            .setParameter("password", password)
-            .getSingleResult();
+                .setParameter("email", email)
+                .setParameter("password", password)
+                .getSingleResult();
     }
 
-    public boolean userExists(String username) {      // em.contains does not work
+    public boolean userExists(String username) {
         return (Long) em.createQuery("SELECT COUNT(u.id) FROM User u WHERE u.username = :username")
             .setParameter("username", username)
             .getSingleResult() > 0;
@@ -55,8 +53,8 @@ public class UserDao {
 
     public User findByUsername(String username) {
         return em.createQuery("SELECT u FROM User u WHERE u.username = :username", User.class)
-            .setParameter("username", username)
-            .getSingleResult();
+                .setParameter("username", username)
+                .getSingleResult();
     }
 
     public boolean emailExists(String email) {
@@ -71,9 +69,9 @@ public class UserDao {
             .getSingleResult();
     }
 
-    public List<User> findAllUsers() {
-        return em.createQuery("SELECT u FROM User u", User.class)
-            .getResultList();
-    }
+    // public List<User> findAllUsers() {
+    //     return em.createQuery("SELECT u FROM User u", User.class)
+    //         .getResultList();
+    // }
 
 }

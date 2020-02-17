@@ -17,13 +17,18 @@ import javax.ws.rs.core.Response;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.json.JSONObject;
 
+import core.user.Profile;
 import core.user.User;
+import dao.ProfileDao;
 import dao.UserDao;
 
 @RequestScoped
 @Path("/profiles")
 @RolesAllowed("users")
-public class ProfileAPI {
+public class ProfilesAPI {
+
+    @Inject
+    private ProfileDao profileDao;
 
     @Inject
     private UserDao userDao;
@@ -39,13 +44,14 @@ public class ProfileAPI {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Response getProfile(@PathParam("username") String username) {
-        User profile = userDao.findByUsername(username);
-        JSONObject body = profile.toProfileJson();
+        Profile profile = profileDao.getProfileByUsername(username);
+        Long profileId = profile.getId();
+        JSONObject body = profile.toJson();
         if (jwt == null) {
             body.put("following", false);
         } else {
             User requestUser = userDao.findUser(jwt.getClaim("id"));
-            body.put("following", requestUser.checkFollowing(profile));
+            body.put("following", requestUser.checkFollowing(profileId));
         }
         return Response.ok(new JSONObject().put("profile", body).toString()).build();
     }
@@ -57,11 +63,12 @@ public class ProfileAPI {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Response followUser(@PathParam("username") String username) {
-        User profile = userDao.findByUsername(username);
+        Profile profile = profileDao.getProfileByUsername(username);
+        Long profileId = profile.getId();
         User requestUser = userDao.findUser(jwt.getClaim("id"));
-        requestUser.follow(profile);
-        JSONObject body = profile.toProfileJson();
-        body.put("following", requestUser.checkFollowing(profile));
+        requestUser.follow(profileId);
+        JSONObject body = profile.toJson();
+        body.put("following", requestUser.checkFollowing(profileId));
         return Response.ok(new JSONObject().put("profile", body).toString()).build();
     }
 
@@ -72,11 +79,12 @@ public class ProfileAPI {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Response unfollowUser(@PathParam("username") String username) {
-        User profile = userDao.findByUsername(username);
+        Profile profile = profileDao.getProfileByUsername(username);
+        Long profileId = profile.getId();
         User requestUser = userDao.findUser(jwt.getClaim("id"));
-        requestUser.unfollow(profile);
-        JSONObject body = profile.toProfileJson();
-        body.put("following", requestUser.checkFollowing(profile));
+        requestUser.unfollow(profileId);
+        JSONObject body = profile.toJson();
+        body.put("following", requestUser.checkFollowing(profileId));
         return Response.ok(new JSONObject().put("profile", body).toString()).build();
     }
 
