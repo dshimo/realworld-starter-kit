@@ -17,6 +17,7 @@ import javax.ws.rs.core.Response;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.json.JSONObject;
 
+import application.errors.ValidationMessages;
 import core.user.Profile;
 import core.user.User;
 import dao.ProfileDao;
@@ -45,9 +46,16 @@ public class ProfilesAPI {
     @Transactional
     public Response getProfile(@PathParam("username") String username) {
         Profile profile = profileDao.getProfileByUsername(username);
+
+        if (profile == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(ValidationMessages.throwError(ValidationMessages.PROFILE_NOT_FOUND))
+                .build();
+        }
+
         Long profileId = profile.getId();
         JSONObject body = profile.toJson();
-        if (jwt == null) {
+        if (jwt.getClaim("id") == null) {
             body.put("following", false);
         } else {
             User requestUser = userDao.findUser(jwt.getClaim("id"));
