@@ -94,7 +94,6 @@ public class UsersAPI {
     @PermitAll
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Transactional
     public Response loginUser(CreateUser requestBody)
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
 
@@ -134,7 +133,6 @@ public class UsersAPI {
     @Path("/user")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    @Transactional
     public Response getCurrent() throws InvalidTokenException, InvalidConsumerException, JSONException, JwtException,
             InvalidBuilderException, InvalidClaimException, KeyException {
 
@@ -158,9 +156,20 @@ public class UsersAPI {
     @Path("/user")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response update(CreateUser requestBody) {
-        JSONObject body = userDao.updateUser(requestBody.getUser(), jwt.getClaim("id")).toJson();
-        return Response.status(Response.Status.CREATED).entity(body.toString()).build();
+    @Transactional
+    public Response update(CreateUser requestBody)
+            throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
+        User body = userDao.updateUser(requestBody.getUser(), jwt.getClaim("id"));
+
+        if (body == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
+                .build();
+        }
+
+        return Response.status(Response.Status.CREATED)
+            .entity(wrapUser(body.toJson(), body.getUsername(), body.getId()))
+            .build();
     }
 
 

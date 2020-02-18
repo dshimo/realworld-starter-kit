@@ -23,24 +23,24 @@ public class UserDao {
         System.out.println("Exiting createUser");
     }
 
+    public void deleteUser(Long id) {
+        em.remove(em.find(User.class, id));
+    }
+
+    public User updateUser(User user, Long userId) {
+        User dbUser = findUser(userId);
+        if (dbUser == null) {
+            return null;
+        }
+        return em.merge(dbUser);
+    }
+
     public User findUser(Long userID) {
         try {
             return em.find(User.class, userID);
         } catch (NoResultException e) {
             return null;
         }
-    }
-
-    public User updateUser(User user, String userId) {
-        User dbUser = em.find(User.class, userId);
-        // Update username for ... repeat for all necessary fields?
-        dbUser.setUsername(user.getUsername());
-        em.merge(user);
-        return dbUser;
-    }
-
-    public void deleteUser(String id) {
-        em.remove(em.find(User.class, id));
     }
 
     public User login(String email, String password) {
@@ -52,31 +52,13 @@ public class UserDao {
 
     public boolean userExists(String username) {
         return (Long) em.createQuery("SELECT COUNT(u.id) FROM User u WHERE u.username = :username")
-            .setParameter("username", username)
-            .getSingleResult() > 0;
-    }
-
-    public User findByUsername(String username) {
-        return em.createQuery("SELECT u FROM User u WHERE u.username = :username", User.class)
                 .setParameter("username", username)
-                .getSingleResult();
+                .getSingleResult() > 0;
     }
 
     public boolean emailExists(String email) {
         return (Long) em.createQuery("SELECT COUNT(u.id) FROM User u WHERE u.email = :email")
-            .setParameter("email", email)
-            .getSingleResult() > 0;
+                .setParameter("email", email)
+                .getSingleResult() > 0;
     }
-
-    public User findByEmail(String email) {
-        return em.createQuery("SELECT u FROM User u WHERE u.email = :email", User.class)
-            .setParameter("email", email)
-            .getSingleResult();
-    }
-
-    // public List<User> findAllUsers() {
-    //     return em.createQuery("SELECT u FROM User u", User.class)
-    //         .getResultList();
-    // }
-
 }

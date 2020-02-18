@@ -67,21 +67,26 @@ public abstract class AbstractUser {
         this.image = image;
     }
     
-    public void update(String email, String username, String password, String bio, String image) {
-        if (! "".equals(email)) {
+    public void update(String email, String username, String password, String image, String bio) {
+        if (email != null && ! "".equals(email)) {
+            System.out.println("Updating email");
             this.email = email;
         }
-        if (! "".equals(username)) {
+        if (username != null && ! "".equals(username)) {
+            System.out.println("Updating username");
             this.username = username;
         }
-        if (! "".equals(password)) {
+        if (password != null && ! "".equals(password)) {
+            System.out.println("Updating password");
             this.password = password;
         }
-        if (! "".equals(bio)) {
-            this.bio = bio;
-        }
-        if (! "".equals(image)) {
+        if (image != null) {
+            System.out.println("Update image");
             this.image = image;
+        }
+        if (bio != null) {
+            System.out.println("Updating bio");
+            this.bio = bio;
         }
     }
 
