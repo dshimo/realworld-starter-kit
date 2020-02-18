@@ -16,6 +16,10 @@ public class User extends AbstractUser {
 
     private Set<Long> following = new HashSet<Long>();
 
+    public Set<Long> getFollowing() {
+        return following;
+    }
+
     public Boolean checkFollowing(Long celebId) {
         return following.contains(celebId);
     }

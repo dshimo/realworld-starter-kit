@@ -27,7 +27,7 @@ import org.json.JSONObject;
 
 import application.errors.ValidationMessages;
 import core.user.User;
-import core.user.Users;
+import core.user.CreateUser;
 import dao.UserDao;
 import security.JwtGenerator;
 
@@ -51,7 +51,7 @@ public class UsersAPI {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
-    public Response createSimpleUser(Users requestBody)
+    public Response createUser(CreateUser requestBody)
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
 
         System.out.println("Creating simple user.");
@@ -95,7 +95,7 @@ public class UsersAPI {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
-    public Response loginUser(Users requestBody)
+    public Response loginUser(CreateUser requestBody)
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
 
         System.out.println("Logging in");
@@ -140,16 +140,16 @@ public class UsersAPI {
 
         String username = jwt.getSubject();
         Long id = jwt.getClaim("id");
-        JSONObject body = userDao.findUser(id).toJson();
-            
-        if (body == null) {
+        User jwtUser = userDao.findUser(id);
+
+        if (jwtUser == null) {
             return Response.status(Response.Status.NOT_FOUND)
-                .entity("Token provides incorrect userId")
+                .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
                 .build();
         }
 
         return Response.status(Response.Status.ACCEPTED)
-            .entity(wrapUser(body, username, id))
+            .entity(wrapUser(jwtUser.toJson(), username, id))
             .build();
     }
 
@@ -158,7 +158,7 @@ public class UsersAPI {
     @Path("/user")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response update(Users requestBody) {
+    public Response update(CreateUser requestBody) {
         JSONObject body = userDao.updateUser(requestBody.getUser(), jwt.getClaim("id")).toJson();
         return Response.status(Response.Status.CREATED).entity(body.toString()).build();
     }

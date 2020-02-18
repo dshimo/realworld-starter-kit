@@ -10,6 +10,7 @@ public class ValidationMessages {
     public static final String EMAIL_NOT_FOUND = "provided email not found";
     public static final String LOGIN_FAIL = "matching email and password not found";
     public static final String PROFILE_NOT_FOUND = "profile not found";
+    public static final String USER_NOT_FOUND = "user not found";
 
     public static String throwError(String message) {
         JSONObject body = new JSONObject();

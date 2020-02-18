@@ -2,6 +2,7 @@ package dao;
 
 import javax.enterprise.context.RequestScoped;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 
 import core.user.User;
@@ -23,7 +24,11 @@ public class UserDao {
     }
 
     public User findUser(Long userID) {
-        return em.find(User.class, userID);
+        try {
+            return em.find(User.class, userID);
+        } catch (NoResultException e) {
+            return null;
+        }
     }
 
     public User updateUser(User user, String userId) {

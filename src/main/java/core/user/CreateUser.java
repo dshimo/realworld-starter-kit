@@ -1,6 +1,6 @@
 package core.user;
 
-public class Users {
+public class CreateUser {
     private User user;
 
     public User getUser() {
