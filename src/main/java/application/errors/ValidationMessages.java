@@ -4,6 +4,7 @@ import org.json.JSONObject;
 
 public class ValidationMessages {
     public static final String REGISTRATION_REQUIREMENTS_BLANK = "username, email, and password must not be blank";
+    public static final String ARTICLE_REQUIREMENTS_BLANK = "title, description, and body must not be blank";
     public static final String DUPLICATE_USERNAME = "username is taken";
     public static final String DUPLICATE_EMAIL = "email is taken";
     public static final String LOGIN_REQUIREMENTS_BLANK = "email, and password must not be blank";

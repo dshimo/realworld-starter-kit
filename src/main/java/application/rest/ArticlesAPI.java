@@ -20,6 +20,7 @@ import javax.ws.rs.core.Response;
 
 import org.eclipse.microprofile.jwt.JsonWebToken;
 
+import application.errors.ValidationMessages;
 import core.article.Article;
 import core.article.CreateArticle;
 import dao.ArticleDao;
@@ -96,9 +97,24 @@ public class ArticlesAPI {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
-    public Response createArticle(CreateArticle article) {
-        System.out.println(article.getArticle().toJson());
-        return Response.ok().build();
+    public Response createArticle(CreateArticle requestBody) {
+        Article article = requestBody.getArticle();
+        String title = article.getTitle();
+        String description = article.getDescription();
+        String body = article.getBody();
+        
+        // Required fields
+        if (title.equals("") || description.equals("") || body.equals("")) {
+            return Response.status(422)
+                .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_REQUIREMENTS_BLANK))
+                .build();
+        }
+
+        articleDao.createArticle(article);
+
+        return Response.status(Response.Status.CREATED)
+            .entity(article.toJson().toString())
+            .build();
     }
 
     /* Update Article */

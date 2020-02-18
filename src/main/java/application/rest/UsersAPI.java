@@ -59,6 +59,7 @@ public class UsersAPI {
         String username = user.getUsername();
         String email = user.getEmail();
 
+        // Consider error checking for null
         // Required fields
         if (username.equals("") || email.equals("") || user.getPassword().equals("")) {
             return Response.status(422)
