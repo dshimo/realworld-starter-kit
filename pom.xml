@@ -52,6 +52,11 @@
             <version>19.0.0.7</version>
             <type>esa</type>
         </dependency>
+        <dependency>
+            <groupId>joda-time</groupId>
+            <artifactId>joda-time</artifactId>
+            <version>2.10.5</version>
+        </dependency>
         <!-- <dependency>
             <groupId>io.openliberty.features</groupId>
             <artifactId>jpa-2.2</artifactId>
