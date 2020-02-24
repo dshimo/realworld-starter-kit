@@ -6,7 +6,11 @@ import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
+import javax.persistence.OneToOne;
+
+import com.github.slugify.Slugify;
 
 import org.joda.time.DateTime;
 import org.json.JSONObject;
@@ -35,7 +39,7 @@ public abstract class AbstractArticle {
     private DateTime updatedAt;
     @Column(name = "favoritesCount")
     private int favoritesCount;
-
+    @ManyToOne
     private Profile author;
 
     public AbstractArticle() {
@@ -49,8 +53,12 @@ public abstract class AbstractArticle {
         return slug;
     }
 
-    public void setSlug(String slug) {
-        this.slug = slug;
+    public void initSlug() {
+        this.slug = new Slugify().slugify(this.title);
+    }
+
+    public void setSlug(String title) {
+        this.slug = new Slugify().slugify(title);
     }
 
     public String getTitle() {
@@ -127,7 +135,7 @@ public abstract class AbstractArticle {
             .put("createdAt", createdAt)
             .put("updatedAt", updatedAt)
             .put("favoritesCount", favoritesCount)
-            .put("author", author == null ? JSONObject.NULL : author);
+            .put("author", author == null ? JSONObject.NULL : author.toJson());
     }
 
 }

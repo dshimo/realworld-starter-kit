@@ -19,12 +19,14 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.eclipse.microprofile.jwt.JsonWebToken;
+import org.json.JSONObject;
 
 import application.errors.ValidationMessages;
 import core.article.Article;
 import core.article.CreateArticle;
+import core.user.Profile;
 import dao.ArticleDao;
-import dao.UserDao;
+import dao.ProfileDao;
 
 @RequestScoped
 @Path("/articles")
@@ -35,7 +37,7 @@ public class ArticlesAPI {
     private ArticleDao articleDao;
 
     @Inject
-    private UserDao userDao;
+    private ProfileDao profileDao;
 
     @Inject
     private JsonWebToken jwt;
@@ -101,19 +103,30 @@ public class ArticlesAPI {
         Article article = requestBody.getArticle();
         String title = article.getTitle();
         String description = article.getDescription();
-        String body = article.getBody();
+        String articleBody = article.getBody();
         
         // Required fields
-        if (title.equals("") || description.equals("") || body.equals("")) {
+        if (title.equals("") || description.equals("") || articleBody.equals("")) {
             return Response.status(422)
                 .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_REQUIREMENTS_BLANK))
                 .build();
         }
+        
+        Long id = jwt.getClaim("id");
+        Profile jwtUser = profileDao.findProfile(id);
+        if (jwtUser == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
+                .build();
+        }
 
+        article.initSlug();
+        article.setAuthor(jwtUser); // missing following logic
         articleDao.createArticle(article);
 
+        JSONObject body = new JSONObject();
         return Response.status(Response.Status.CREATED)
-            .entity(article.toJson().toString())
+            .entity(body.put("article", article.toJson()).toString())
             .build();
     }
 
