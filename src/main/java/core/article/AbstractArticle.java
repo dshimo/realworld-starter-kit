@@ -1,5 +1,7 @@
 package core.article;
 
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 
 import javax.persistence.Column;
@@ -8,11 +10,9 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.MappedSuperclass;
-import javax.persistence.OneToOne;
 
 import com.github.slugify.Slugify;
 
-import org.joda.time.DateTime;
 import org.json.JSONObject;
 
 import core.user.Profile;
@@ -31,19 +31,19 @@ public abstract class AbstractArticle {
     private String description;
     @Column(name = "body", nullable = false)
     private String body;
-    @Column(name = "tags", nullable = true)
+    @Column(name = "tagList", nullable = true)
     public List<String> tagList;
     @Column(name = "createdAt")
-    private DateTime createdAt;
+    private Timestamp createdAt;
     @Column(name = "updatedAt")
-    private DateTime updatedAt;
+    private Timestamp updatedAt;
     @Column(name = "favoritesCount")
     private int favoritesCount;
     @ManyToOne
     private Profile author;
 
     public AbstractArticle() {
-        DateTime created = DateTime.now();
+        Timestamp created = Timestamp.from(Instant.now());
         this.createdAt = created;
         this.updatedAt = created;
         this.favoritesCount = 0;
@@ -93,16 +93,16 @@ public abstract class AbstractArticle {
         this.tagList = tagList;
     }
 
-    public DateTime getCreatedAt() {
-        return createdAt;
+    public Instant getCreatedAt() {
+        return createdAt.toInstant();
     }
 
-    public DateTime getUpdatedAt() {
-        return updatedAt;
+    public Instant getUpdatedAt() {
+        return updatedAt.toInstant();
     }
 
     public void setUpdatedAt() {
-        this.updatedAt = DateTime.now();
+        this.updatedAt = Timestamp.from(Instant.now());
     }
 
     public int getFavoritesCount() {
@@ -125,6 +125,22 @@ public abstract class AbstractArticle {
         this.author = author;
     }
 
+    public void update(String title, String description, String body) {
+        if (title != null) {
+            System.out.println("Updating title and slug");
+            this.title = title;
+            this.slug = new Slugify().slugify(title);
+        }
+        if (description != null) {
+            System.out.println("Updating description");
+            this.description = description;
+        }
+        if (body != null) {
+            System.out.println("Updating article body");
+            this.body = body;
+        }
+    }
+    
     public JSONObject toJson() {
         return new JSONObject()
             .put("slug", slug == null ? JSONObject.NULL : slug)
@@ -132,10 +148,10 @@ public abstract class AbstractArticle {
             .put("description", description)
             .put("body", body)
             .put("tagList", tagList == null ? JSONObject.NULL : tagList)
-            .put("createdAt", createdAt)
-            .put("updatedAt", updatedAt)
+            .put("createdAt", createdAt.toInstant())
+            .put("updatedAt", updatedAt.toInstant())
             .put("favoritesCount", favoritesCount)
-            .put("author", author == null ? JSONObject.NULL : author.toJson());
+            .put("author", author == null ? JSONObject.NULL : author.toJson().put("following", false));
     }
 
 }

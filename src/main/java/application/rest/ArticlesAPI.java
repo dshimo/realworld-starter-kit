@@ -1,5 +1,8 @@
 package application.rest;
 
+import java.util.List;
+import java.util.Set;
+
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
 import javax.enterprise.context.RequestScoped;
@@ -25,8 +28,10 @@ import application.errors.ValidationMessages;
 import core.article.Article;
 import core.article.CreateArticle;
 import core.user.Profile;
+import core.user.User;
 import dao.ArticleDao;
 import dao.ProfileDao;
+import dao.UserDao;
 
 @RequestScoped
 @Path("/articles")
@@ -37,6 +42,9 @@ public class ArticlesAPI {
     private ArticleDao articleDao;
 
     @Inject
+    private UserDao userDao;
+
+    @Inject
     private ProfileDao profileDao;
 
     @Inject
@@ -45,6 +53,7 @@ public class ArticlesAPI {
     /* List Articles */
     // Tag, Author, or Favorited query parameter
     @GET
+    @Produces(MediaType.APPLICATION_JSON)
     @PermitAll
     public Response listArticles(
             @QueryParam("tag") String tag, 
@@ -53,14 +62,17 @@ public class ArticlesAPI {
             @QueryParam("limit") @DefaultValue("20") int limit,
             @QueryParam("offset") @DefaultValue("0") int offset
     ) {
+        if (tag == null && author == null && favorited == null) {
+            List<Article> articles = articleDao.defaultListArticle(limit, offset);
+            JSONObject body = new JSONObject().put("articles", articles).put("articlesCount", articles.size());
+            return Response.ok()
+                .entity(body.toString())
+                .build();
+        }
 
-        System.out.println("tag: " + tag);
-        System.out.println("author: " + author);
-        System.out.println("favorited: " + favorited);
-        System.out.println("limit: " + limit);
-        System.out.println("offset: " + offset);
-
-        return Response.ok().build();
+        List<Article> articles = articleDao.listArticles(tag, author, favorited, limit, offset);
+        JSONObject body = new JSONObject().put("articles", articles).put("articlesCount", articles.size());
+        return Response.ok(body.toString()).build();
     }
 
     /* Feed Articles */
@@ -69,32 +81,63 @@ public class ArticlesAPI {
     // users, ordered by most recent first.
     @GET
     @Path("/feed")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response feedArticles(            
             @QueryParam("limit") @DefaultValue("20") int limit, 
             @QueryParam("offset") @DefaultValue("0") int offset
     ) {
-        // Set<Long> following = userDao.findUser(jwt.getClaim("id")).getFollowList();
+        User user = userDao.findUser(jwt.getClaim("id"));
 
-        // How will you retrieve articles made by following?
+        if (user == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
+                .build();
+        }
+        
+        Set<Long> following = user.getFollowing();
+        if (following.isEmpty()) {
+            System.out.println("Empty follow list");
+            return Response.ok(new JSONObject().put("articles", new int[0]).put("articlesCount", 0).toString())
+                .build();
+        }
 
-        // 1) Retrieve all articles by all following and sort by date
+        List<Article> feed = articleDao.grabFeed(limit, offset, following);
 
-
-        return Response.ok().build();
+        return Response.ok(new JSONObject().put("articles", feed).put("articlesCount", feed.size()).toString()).build();
     }
 
     /* Get Article */
     @GET
     @Path("/{slug}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @PermitAll
     public Response getArticle(
             @PathParam("slug") String slug,
             @QueryParam("limit") @DefaultValue("20") int limit, 
             @QueryParam("offset") @DefaultValue("0") int offset
     ) {
-        return Response.ok().build();
+        Article article = articleDao.getArticle(slug);
+        if (article == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_FOUND))
+                .build();
+        }
+
+        JSONObject body = article.toJson();
+        Long id = jwt.getClaim("id");
+
+        if (id == null) {
+            body.put("favorited", false);
+        } else {
+            body.put("favorited", article.checkFavorited(id));
+        }
+
+        return Response.ok(new JSONObject().put("article", body).toString())
+            .build();
     }
 
     /* Create Article */
+    // 1.0 Rework following logic probably
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -124,28 +167,36 @@ public class ArticlesAPI {
         article.setAuthor(jwtUser); // missing following logic
         articleDao.createArticle(article);
 
-        JSONObject body = new JSONObject();
+        JSONObject body = article.toJson();
+        body.put("favorited", false);
+        // JSONObject body = new JSONObject();
         return Response.status(Response.Status.CREATED)
-            .entity(body.put("article", article.toJson()).toString())
+            .entity(new JSONObject().put("article", body).toString())
             .build();
     }
 
     /* Update Article */
     @PUT
     @Path("/{slug}")
-    public Response updateArticle(            
-            @PathParam("slug") String slug,
-            @QueryParam("title") String title, 
-            @QueryParam("description") String description,
-            @QueryParam("body") Boolean body
-    ) {
-        return Response.ok().build();
+    public Response updateArticle(@PathParam("slug") String slug, CreateArticle requestBody) {
+        Article body = articleDao.updateArticle(requestBody.getArticle(), slug);
+
+        if (body == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_FOUND))
+                .build();
+        }
+        
+        return Response.status(Response.Status.CREATED)
+            .entity(new JSONObject().put("article", body).toString())
+            .build();
     }
 
     /* Delete Article */
     @DELETE
     @Path("/{slug}")
     public Response deleteArticle(@PathParam("slug") String slug) {
+        articleDao.deleteArticle(slug);
         return Response.ok().build();
     }
 
