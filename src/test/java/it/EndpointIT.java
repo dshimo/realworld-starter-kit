@@ -1,15 +1,16 @@
 package it;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import javax.json.bind.Jsonb;
-import javax.json.bind.JsonbBuilder;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
+import com.google.gson.Gson;
 
 import org.json.JSONObject;
 import org.junit.Test;
@@ -18,10 +19,21 @@ import core.user.CreateUser;
 import core.user.User;
 
 public class EndpointIT {
-
-    // private static final Jsonb jsonb = JsonbBuilder.create();
     private static final String baseURL = "http://localhost:9080";
     
+    @Test
+    public void basicHealth() {
+        Client client = ClientBuilder.newClient();
+
+        WebTarget target = client.target(baseURL + "/health");
+        Response response = target.request().get();
+
+        assertEquals("Health status code unexpected for " + baseURL + "/health", Response.Status.OK.getStatusCode(), response.getStatus());
+        String json = response.readEntity(String.class);
+        assertTrue("Health message did not find outcome up in the response: " + json, json.contains("\"outcome\":\"UP\""));
+        response.close();
+    }
+
     @Test
     public void basicGetArticleEmpty() {
         Client client = ClientBuilder.newClient();
@@ -45,9 +57,9 @@ public class EndpointIT {
 
         CreateUser testRequestBody = new CreateUser();
         User testUser = new User();
-        testUser.setEmail("dshi@ibm.com");
+        testUser.setEmail("johnnyjoestar@ibm.com");
         testUser.setPassword("password");
-        testUser.setUsername("dshi");
+        testUser.setUsername("Johnny");
         testRequestBody.setUser(testUser);
 
         Response response = target.request(MediaType.APPLICATION_JSON).post(Entity.json(testRequestBody));
