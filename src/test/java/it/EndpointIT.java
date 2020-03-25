@@ -10,8 +10,6 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.google.gson.Gson;
-
 import org.json.JSONObject;
 import org.junit.Test;
 
@@ -28,7 +26,7 @@ public class EndpointIT {
         WebTarget target = client.target(baseURL + "/health");
         Response response = target.request().get();
 
-        assertEquals("Health status code unexpected for " + baseURL + "/health", Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals("Health status code unexpected for " + baseURL + "/health.", Response.Status.OK.getStatusCode(), response.getStatus());
         String json = response.readEntity(String.class);
         assertTrue("Health message did not find outcome up in the response: " + json, json.contains("\"outcome\":\"UP\""));
         response.close();
@@ -41,7 +39,7 @@ public class EndpointIT {
         WebTarget target = client.target(baseURL + "/api/articles");
         Response response = target.request().get();
 
-        assertEquals("Did not retrieve 200 from " + baseURL + " articles endpoint", Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals("Did not retrieve 200 from " + baseURL + "/api/articles.", Response.Status.OK.getStatusCode(), response.getStatus());
 
         String json = response.readEntity(String.class);
         JSONObject emptyArticles = new JSONObject().put("articlesCount", 0).put("articles", new String[0]);
@@ -64,7 +62,7 @@ public class EndpointIT {
 
         Response response = target.request(MediaType.APPLICATION_JSON).post(Entity.json(testRequestBody));
 
-        assertEquals("Did not retrieve 200 from " + baseURL + " create user", Response.Status.CREATED.getStatusCode(), response.getStatus());
+        assertEquals("Did not retrieve 200 from " + baseURL + "/api/users.", Response.Status.CREATED.getStatusCode(), response.getStatus());
         response.close();
     }
 }

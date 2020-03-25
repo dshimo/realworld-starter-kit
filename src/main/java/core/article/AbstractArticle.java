@@ -117,8 +117,8 @@ public abstract class AbstractArticle {
         --this.favoritesCount;
     }
 
-    public Profile getAuthor() {
-        return author;
+    public JSONObject getAuthor() {
+        return author.toJson();
     }
 
     public void setAuthor(Profile author) {

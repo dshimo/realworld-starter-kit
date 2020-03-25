@@ -91,7 +91,6 @@ public class ArticleDao {
         //     parameters.put("favorited", favorited);
         // }
         
-    
         query.append(" WHERE " + String.join(" AND ", where) + " ORDER BY a.updatedAt DESC");
         TypedQuery<Article> jpaQuery = em.createQuery(query.toString(), Article.class);
         for (String key  : parameters.keySet()) {
@@ -99,7 +98,10 @@ public class ArticleDao {
         }
         jpaQuery.setMaxResults(limit);
         return jpaQuery.getResultList();
+    }
 
+    public List<String> getTags() {
+        return em.createQuery("SELECT a.tagList FROM Article a", String.class).getResultList();
     }
 
 }

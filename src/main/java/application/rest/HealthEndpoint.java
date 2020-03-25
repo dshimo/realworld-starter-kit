@@ -8,9 +8,7 @@ import org.eclipse.microprofile.health.HealthCheckResponse;
 @Health
 @ApplicationScoped
 public class HealthEndpoint implements HealthCheck {
-
-    // TODO: Write a method to test connection to Derby
-
+    
     @Override
     public HealthCheckResponse call() {
         return HealthCheckResponse.named("test").up().build();
