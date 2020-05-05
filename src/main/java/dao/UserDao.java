@@ -23,8 +23,8 @@ public class UserDao {
         System.out.println("Exiting createUser");
     }
 
-    public void deleteUser(Long id) {
-        em.remove(em.find(User.class, id));
+    public void deleteUser(Long userId) {
+        em.remove(em.find(User.class, userId));
     }
 
     public User updateUser(User user, Long userId) {
@@ -51,13 +51,13 @@ public class UserDao {
     }
 
     public boolean userExists(String username) {
-        return (Long) em.createQuery("SELECT COUNT(u.id) FROM User u WHERE u.username = :username")
+        return (Long) em.createQuery("SELECT COUNT(u.USER_ID) FROM User u WHERE u.username = :username")
                 .setParameter("username", username)
                 .getSingleResult() > 0;
     }
 
     public boolean emailExists(String email) {
-        return (Long) em.createQuery("SELECT COUNT(u.id) FROM User u WHERE u.email = :email")
+        return (Long) em.createQuery("SELECT COUNT(u.USER_ID) FROM User u WHERE u.email = :email")
                 .setParameter("email", email)
                 .getSingleResult() > 0;
     }

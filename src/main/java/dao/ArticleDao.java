@@ -12,6 +12,7 @@ import javax.persistence.PersistenceContext;
 import javax.persistence.TypedQuery;
 
 import core.article.Article;
+import core.user.Profile;
 
 @RequestScoped
 public class ArticleDao {
@@ -60,12 +61,13 @@ public class ArticleDao {
     }
 
     public List<Article> defaultListArticle(int limit, int offset) {
-        return em.createQuery("SELECT a FROM Article a ORDER BY a.updatedAt DESC", Article.class)
+        List<Article> test =  em.createQuery("SELECT a FROM Article a ORDER BY a.updatedAt DESC", Article.class)
             .setMaxResults(limit)
             .getResultList();
+        return test;
     }
 
-    public List<Article> grabFeed(int limit, int offset, Set<Long> following) {
+    public List<Article> grabFeed(int limit, int offset, Set<Profile> following) {
         return em.createQuery("SELECT a FROM Article a WHERE a.id IN :ids ORDER BY a.updatedAt", Article.class)
             .setParameter("ids", following)
             .setMaxResults(limit)

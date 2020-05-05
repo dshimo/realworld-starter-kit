@@ -6,7 +6,6 @@ import org.json.JSONObject;
 
 public class Articles {
     private List<Article> articles;
-    private int articlesCount;
 
     public List<Article> getArticles() {
         return articles;
@@ -17,16 +16,12 @@ public class Articles {
     }
 
     public int getArticlesCount() {
-        return articlesCount;
-    }
-
-    public void setArticlesCount(int articlesCount) {
-        this.articlesCount = articlesCount;
+        return articles.size();
     }
 
     public JSONObject toJson() {
         return new JSONObject()
             .put("articles", articles)
-            .put("articlesCount", articlesCount);
+            .put("articlesCount", getArticlesCount());
     }
 }

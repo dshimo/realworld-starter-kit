@@ -16,6 +16,7 @@ import com.github.slugify.Slugify;
 import org.json.JSONObject;
 
 import core.user.Profile;
+import core.user.User;
 
 @MappedSuperclass
 public abstract class AbstractArticle {
@@ -39,7 +40,7 @@ public abstract class AbstractArticle {
     private Timestamp updatedAt;
     @Column(name = "favoritesCount")
     private int favoritesCount;
-    @ManyToOne
+    @ManyToOne(targetEntity = Profile.class)
     private Profile author;
 
     public AbstractArticle() {
@@ -117,8 +118,8 @@ public abstract class AbstractArticle {
         --this.favoritesCount;
     }
 
-    public JSONObject getAuthor() {
-        return author.toJson();
+    public Profile getAuthor() {
+        return this.author;
     }
 
     public void setAuthor(Profile author) {
@@ -141,17 +142,17 @@ public abstract class AbstractArticle {
         }
     }
     
-    public JSONObject toJson() {
+    public JSONObject toJson(User userContext) {
         return new JSONObject()
             .put("slug", slug == null ? JSONObject.NULL : slug)
             .put("title", title)
             .put("description", description)
             .put("body", body)
-            .put("tagList", tagList == null ? JSONObject.NULL : tagList)
+            .put("tagList", tagList == null ? JSONObject.NULL : tagList) // TODO: retrieve as tagList not tag
             .put("createdAt", createdAt.toInstant())
             .put("updatedAt", updatedAt.toInstant())
             .put("favoritesCount", favoritesCount)
-            .put("author", author == null ? JSONObject.NULL : author.toJson().put("following", false));
+            .put("favorited", (userContext == null) ? false : userContext.checkFavorited((Article)this))
+            .put("author", author == null ? JSONObject.NULL : author.toJson(userContext));
     }
-
 }

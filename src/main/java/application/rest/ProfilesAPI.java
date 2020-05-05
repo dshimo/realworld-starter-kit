@@ -18,10 +18,7 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.json.JSONObject;
 
 import application.errors.ValidationMessages;
-import core.user.Profile;
-import core.user.User;
-import dao.ProfileDao;
-import dao.UserDao;
+import dao.UserContext;
 
 @RequestScoped
 @Path("/profiles")
@@ -29,10 +26,7 @@ import dao.UserDao;
 public class ProfilesAPI {
 
     @Inject
-    private ProfileDao profileDao;
-
-    @Inject
-    private UserDao userDao;
+    private UserContext uc;
 
     @Inject
     private JsonWebToken jwt;
@@ -45,23 +39,7 @@ public class ProfilesAPI {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Response getProfile(@PathParam("username") String username) {
-        Profile profile = profileDao.getProfileByUsername(username);
-
-        if (profile == null) {
-            return Response.status(Response.Status.NOT_FOUND)
-                .entity(ValidationMessages.throwError(ValidationMessages.PROFILE_NOT_FOUND))
-                .build();
-        }
-
-        Long profileId = profile.getId();
-        JSONObject body = profile.toJson();
-        if (jwt.getClaim("id") == null) {
-            body.put("following", false);
-        } else {
-            User requestUser = userDao.findUser(jwt.getClaim("id"));
-            body.put("following", requestUser.checkFollowing(profileId));
-        }
-        return Response.ok(new JSONObject().put("profile", body).toString()).build();
+        return wrapResponse(jwt.getClaim("id"), username);
     }
 
     /* Follow User */
@@ -71,13 +49,9 @@ public class ProfilesAPI {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Response followUser(@PathParam("username") String username) {
-        Profile profile = profileDao.getProfileByUsername(username);
-        Long profileId = profile.getId();
-        User requestUser = userDao.findUser(jwt.getClaim("id"));
-        requestUser.follow(profileId);
-        JSONObject body = profile.toJson();
-        body.put("following", requestUser.checkFollowing(profileId));
-        return Response.ok(new JSONObject().put("profile", body).toString()).build();
+        Long userId = jwt.getClaim("id");
+        uc.followProfile(userId, username);
+        return wrapResponse(userId, username);
     }
 
     /* Unfollow User */
@@ -87,13 +61,19 @@ public class ProfilesAPI {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Response unfollowUser(@PathParam("username") String username) {
-        Profile profile = profileDao.getProfileByUsername(username);
-        Long profileId = profile.getId();
-        User requestUser = userDao.findUser(jwt.getClaim("id"));
-        requestUser.unfollow(profileId);
-        JSONObject body = profile.toJson();
-        body.put("following", requestUser.checkFollowing(profileId));
-        return Response.ok(new JSONObject().put("profile", body).toString()).build();
+        Long userId = jwt.getClaim("id");
+        uc.unfollowProfile(userId, username);
+        return wrapResponse(userId, username);
+    }
+
+    private Response wrapResponse(Long id, String username) {
+        JSONObject responseBody = uc.findProfileByUsername(id, username);
+        if (responseBody == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(ValidationMessages.throwError(ValidationMessages.PROFILE_NOT_FOUND)).build();
+        } else {
+            return Response.ok(responseBody.toString()).build();
+        }
     }
 
 }

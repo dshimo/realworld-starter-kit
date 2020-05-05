@@ -1,7 +1,6 @@
 package application.rest;
 
 import java.util.List;
-import java.util.Set;
 
 import javax.annotation.security.PermitAll;
 import javax.annotation.security.RolesAllowed;
@@ -27,11 +26,9 @@ import org.json.JSONObject;
 import application.errors.ValidationMessages;
 import core.article.Article;
 import core.article.CreateArticle;
-import core.user.Profile;
 import core.user.User;
 import dao.ArticleDao;
-import dao.ProfileDao;
-import dao.UserDao;
+import dao.UserContext;
 
 @RequestScoped
 @Path("/articles")
@@ -39,13 +36,10 @@ import dao.UserDao;
 public class ArticlesAPI {
 
     @Inject
+    private UserContext uc;
+
+    @Inject
     private ArticleDao articleDao;
-
-    @Inject
-    private UserDao userDao;
-
-    @Inject
-    private ProfileDao profileDao;
 
     @Inject
     private JsonWebToken jwt;
@@ -62,6 +56,12 @@ public class ArticlesAPI {
             @QueryParam("limit") @DefaultValue("20") int limit,
             @QueryParam("offset") @DefaultValue("0") int offset
     ) {
+
+        // User requestUser = null;
+        // if (jwt.getClaim("id") != null) {
+        //     requestUser = userDao.findUser(jwt.getClaim("id"));
+        // }
+        User userContext = uc.findUser(jwt.getClaim("id"));
         if (tag == null && author == null && favorited == null) {
             List<Article> articles = articleDao.defaultListArticle(limit, offset);
             JSONObject body = new JSONObject().put("articles", articles).put("articlesCount", articles.size());
@@ -86,24 +86,26 @@ public class ArticlesAPI {
             @QueryParam("limit") @DefaultValue("20") int limit, 
             @QueryParam("offset") @DefaultValue("0") int offset
     ) {
-        User user = userDao.findUser(jwt.getClaim("id"));
+        // User userContext = userDao.findUser(jwt.getClaim("id"));
 
-        if (user == null) {
-            return Response.status(Response.Status.NOT_FOUND)
-                .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
-                .build();
-        }
+        // if (userContext == null) {
+        //     return Response.status(Response.Status.NOT_FOUND)
+        //         .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
+        //         .build();
+        // }
         
-        Set<Long> following = user.getFollowing();
-        if (following.isEmpty()) {
-            System.out.println("Empty follow list");
-            return Response.ok(new JSONObject().put("articles", new int[0]).put("articlesCount", 0).toString())
-                .build();
-        }
+        // Set<Profile> following = userContext.getFollowing();
+        // // Set<Long> following = user.getFollowing();
+        // if (following.isEmpty()) {
+        //     System.out.println("Empty follow list");
+        //     return Response.ok(new JSONObject().put("articles", new int[0]).put("articlesCount", 0).toString())
+        //         .build();
+        // }
 
-        List<Article> feed = articleDao.grabFeed(limit, offset, following);
+        // List<Article> feed = articleDao.grabFeed(limit, offset, following);
 
-        return Response.ok(new JSONObject().put("articles", feed).put("articlesCount", feed.size()).toString()).build();
+        // return Response.ok(new JSONObject().put("articles", feed).put("articlesCount", feed.size()).toString()).build();
+            return Response.ok().build();
     }
 
     /* Get Article */
@@ -116,24 +118,8 @@ public class ArticlesAPI {
             @QueryParam("limit") @DefaultValue("20") int limit, 
             @QueryParam("offset") @DefaultValue("0") int offset
     ) {
-        Article article = articleDao.getArticle(slug);
-        if (article == null) {
-            return Response.status(Response.Status.NOT_FOUND)
-                .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_FOUND))
-                .build();
-        }
-
-        JSONObject body = article.toJson();
-        Long id = jwt.getClaim("id");
-
-        if (id == null) {
-            body.put("favorited", false);
-        } else {
-            body.put("favorited", article.checkFavorited(id));
-        }
-
-        return Response.ok(new JSONObject().put("article", body).toString())
-            .build();
+        JSONObject article = uc.findArticle(jwt.getClaim("id"), slug);
+        return wrapResponseArticle(article);
     }
 
     /* Create Article */
@@ -155,23 +141,20 @@ public class ArticlesAPI {
                 .build();
         }
         
-        Long id = jwt.getClaim("id");
-        Profile jwtUser = profileDao.findProfile(id);
-        if (jwtUser == null) {
+        User userContext = uc.findUser(jwt.getClaim("id"));
+        if (userContext == null) {
             return Response.status(Response.Status.NOT_FOUND)
                 .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
                 .build();
         }
 
         article.initSlug();
-        article.setAuthor(jwtUser); // missing following logic
+        article.setAuthor(uc.findProfile(userContext.getUsername())); // 2nd DB read
         articleDao.createArticle(article);
 
-        JSONObject body = article.toJson();
-        body.put("favorited", false);
-        // JSONObject body = new JSONObject();
+        JSONObject responseBody = article.toJson((User)userContext);
         return Response.status(Response.Status.CREATED)
-            .entity(new JSONObject().put("article", body).toString())
+            .entity(new JSONObject().put("article", responseBody).toString())
             .build();
     }
 
@@ -203,6 +186,7 @@ public class ArticlesAPI {
     /* Add Comments to an Article */
     @POST
     @Path("/{slug}/comments")
+    @Consumes(MediaType.APPLICATION_JSON)
     public Response addComment(@PathParam("slug") String slug) {
         return Response.ok().build();
     }
@@ -233,5 +217,13 @@ public class ArticlesAPI {
     @Path("/{slug}/favorite")
     public Response unfavorite(@PathParam("slug") String slug) {
         return Response.ok().build();
+    }
+
+    private Response wrapResponseArticle(JSONObject responseBody) {
+        if (responseBody == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_FOUND)).build();
+        }
+        return Response.ok(responseBody.toString()).build();
     }
 }

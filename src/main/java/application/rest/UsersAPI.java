@@ -182,6 +182,7 @@ public class UsersAPI {
 
     private String generateToken(String username, Long userId)
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
+        System.out.println("Generating Token...");
         return tknGenerator.getToken(username, userId);
     }
 

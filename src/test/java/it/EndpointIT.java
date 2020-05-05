@@ -5,16 +5,11 @@ import static org.junit.Assert.assertTrue;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.json.JSONObject;
 import org.junit.Test;
-
-import core.user.CreateUser;
-import core.user.User;
 
 public class EndpointIT {
     private static final String baseURL = "http://localhost:9080";
@@ -47,22 +42,22 @@ public class EndpointIT {
         response.close();
     }
 
-    @Test
-    public void createUser() {
-        Client client = ClientBuilder.newClient();
+    // @Test
+    // public void createUser() {
+    //     Client client = ClientBuilder.newClient();
 
-        WebTarget target = client.target(baseURL + "/api/users");
+    //     WebTarget target = client.target(baseURL + "/api/users");
 
-        CreateUser testRequestBody = new CreateUser();
-        User testUser = new User();
-        testUser.setEmail("johnnyjoestar@ibm.com");
-        testUser.setPassword("password");
-        testUser.setUsername("Johnny");
-        testRequestBody.setUser(testUser);
+    //     CreateUser testRequestBody = new CreateUser();
+    //     User testUser = new User();
+    //     testUser.setEmail("johnnyjoestar@ibm.com");
+    //     testUser.setPassword("password");
+    //     testUser.setUsername("Johnny");
+    //     testRequestBody.setUser(testUser);
 
-        Response response = target.request(MediaType.APPLICATION_JSON).post(Entity.json(testRequestBody));
+    //     Response response = target.request(MediaType.APPLICATION_JSON).post(Entity.json(testRequestBody));
 
-        assertEquals("Did not retrieve 200 from " + baseURL + "/api/users.", Response.Status.CREATED.getStatusCode(), response.getStatus());
-        response.close();
-    }
+    //     assertEquals("Did not retrieve 200 from " + baseURL + "/api/users.", Response.Status.CREATED.getStatusCode(), response.getStatus());
+    //     response.close();
+    // }
 }
