@@ -97,7 +97,7 @@ public abstract class AbstractUser {
         return followedBy;
     }
 
-    public boolean checkFollowing(User user) {
+    public boolean checkFollowedBy(User user) {
         return followedBy.contains(user);
     }
 

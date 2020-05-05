@@ -1,5 +1,8 @@
 package dao;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import javax.enterprise.context.RequestScoped;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -76,4 +79,38 @@ public class UserContext {
         return new JSONObject().put("article", article.toJson(userContext));
     }
 
+    public List<JSONObject> defaultListArticles(Long userId, int limit, int offset) {
+        User userContext = findUser(userId);
+        List<Article> rawArticles = em.createQuery("SELECT a FROM Article a ORDER BY a.updatedAt DESC", Article.class)
+                .setMaxResults(limit).getResultList();
+        return rawArticles.stream()
+            .map(a -> a.toJson(userContext)).skip(offset).collect(Collectors.toList());
+    }
+
+    public List<JSONObject> sortListArticles(Long userId, String tag, String author, String favorited, int limit, int offset) {
+        User userContext = findUser(userId);
+        List<Article> rawArticles = em.createQuery("SELECT a FROM Article a ORDER BY a.updatedAt DESC", Article.class)
+                .setMaxResults(limit).getResultList();
+        if (tag != null) {
+            rawArticles = rawArticles.stream().filter(a -> a.getTags().contains(tag)).collect(Collectors.toList());
+        }
+        if (author != null) {
+            rawArticles = rawArticles.stream().filter(a -> a.getAuthor().getUsername().equals(author)).collect(Collectors.toList());
+        }
+        if (favorited != null) {
+            Profile profile = findProfile(favorited);
+            rawArticles = rawArticles.stream().filter(a -> profile == null ?  false : profile.checkFavorited(a)).collect(Collectors.toList());
+        }
+        return rawArticles.stream()
+            .map(a -> a.toJson(userContext)).skip(offset).collect(Collectors.toList());
+    }
+
+    public List<JSONObject> grabFeed(Long userId, int limit, int offset) {
+        User userContext = findUser(userId);
+        List<Article> rawArticles = em.createQuery("SELECT a FROM Article a ORDER BY a.updatedAt DESC", Article.class)
+                .setMaxResults(limit).getResultList();
+        return rawArticles.stream()
+            .filter(a -> a.getAuthor().checkFollowedBy(userContext))
+            .map(a -> a.toJson(userContext)).skip(offset).collect(Collectors.toList());
+    }
 }

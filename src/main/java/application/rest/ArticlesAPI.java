@@ -52,27 +52,18 @@ public class ArticlesAPI {
     public Response listArticles(
             @QueryParam("tag") String tag, 
             @QueryParam("author") String author, 
-            @QueryParam("favorited") Boolean favorited,
+            @QueryParam("favorited") String favoritedBy,
             @QueryParam("limit") @DefaultValue("20") int limit,
             @QueryParam("offset") @DefaultValue("0") int offset
     ) {
-
-        // User requestUser = null;
-        // if (jwt.getClaim("id") != null) {
-        //     requestUser = userDao.findUser(jwt.getClaim("id"));
-        // }
-        User userContext = uc.findUser(jwt.getClaim("id"));
-        if (tag == null && author == null && favorited == null) {
-            List<Article> articles = articleDao.defaultListArticle(limit, offset);
-            JSONObject body = new JSONObject().put("articles", articles).put("articlesCount", articles.size());
-            return Response.ok()
-                .entity(body.toString())
-                .build();
+        Long userId = jwt.getClaim("id");
+        List<JSONObject> articles;
+        if (tag == null && author == null && favoritedBy == null) {
+            articles = uc.defaultListArticles(userId, limit, offset); // Maybe redundant at this point
+        } else {
+            articles = uc.sortListArticles(userId, tag, author, favoritedBy, limit, offset);
         }
-
-        List<Article> articles = articleDao.listArticles(tag, author, favorited, limit, offset);
-        JSONObject body = new JSONObject().put("articles", articles).put("articlesCount", articles.size());
-        return Response.ok(body.toString()).build();
+        return wrapResponseArticles(articles);
     }
 
     /* Feed Articles */
@@ -86,26 +77,9 @@ public class ArticlesAPI {
             @QueryParam("limit") @DefaultValue("20") int limit, 
             @QueryParam("offset") @DefaultValue("0") int offset
     ) {
-        // User userContext = userDao.findUser(jwt.getClaim("id"));
-
-        // if (userContext == null) {
-        //     return Response.status(Response.Status.NOT_FOUND)
-        //         .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
-        //         .build();
-        // }
-        
-        // Set<Profile> following = userContext.getFollowing();
-        // // Set<Long> following = user.getFollowing();
-        // if (following.isEmpty()) {
-        //     System.out.println("Empty follow list");
-        //     return Response.ok(new JSONObject().put("articles", new int[0]).put("articlesCount", 0).toString())
-        //         .build();
-        // }
-
-        // List<Article> feed = articleDao.grabFeed(limit, offset, following);
-
-        // return Response.ok(new JSONObject().put("articles", feed).put("articlesCount", feed.size()).toString()).build();
-            return Response.ok().build();
+        Long userId = jwt.getClaim("id");
+        List<JSONObject> articles = uc.grabFeed(userId, limit, offset);
+        return wrapResponseArticles(articles);
     }
 
     /* Get Article */
@@ -152,7 +126,7 @@ public class ArticlesAPI {
         article.setAuthor(uc.findProfile(userContext.getUsername())); // 2nd DB read
         articleDao.createArticle(article);
 
-        JSONObject responseBody = article.toJson((User)userContext);
+        JSONObject responseBody = article.toJson(userContext);
         return Response.status(Response.Status.CREATED)
             .entity(new JSONObject().put("article", responseBody).toString())
             .build();
@@ -224,6 +198,11 @@ public class ArticlesAPI {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_FOUND)).build();
         }
+        return Response.ok(responseBody.toString()).build();
+    }
+
+    private Response wrapResponseArticles(List<JSONObject> articles) {
+        JSONObject responseBody = new JSONObject().put("articles", articles).put("articlesCount", articles.size());
         return Response.ok(responseBody.toString()).build();
     }
 }
