@@ -22,7 +22,8 @@ import core.user.User;
 public abstract class AbstractArticle {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    private Long id;
+    @Column(name = "ARTICLE_ID")
+    private Long ARTICLE_ID;
 
     @Column(name = "slug")
     private String slug;
@@ -148,7 +149,7 @@ public abstract class AbstractArticle {
             .put("title", title)
             .put("description", description)
             .put("body", body)
-            .put("tagList", tagList == null ? JSONObject.NULL : tagList) // TODO: retrieve as tagList not tag
+            .put("tagList", tagList == null ? JSONObject.NULL : tagList)
             .put("createdAt", createdAt.toInstant())
             .put("updatedAt", updatedAt.toInstant())
             .put("favoritesCount", favoritesCount)

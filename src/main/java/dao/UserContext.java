@@ -68,14 +68,7 @@ public class UserContext {
 
     public JSONObject findArticle(Long userId, String slug) {
         User userContext = findUser(userId);
-        Article article;
-        try {
-            article = em.createQuery("SELECT a FROM Article a WHERE a.slug = :slug", Article.class)
-                    .setParameter("slug", slug)
-                    .getSingleResult();
-        } catch (NoResultException e) {
-            return null;
-        }
+        Article article = getArticle(slug);
         return new JSONObject().put("article", article.toJson(userContext));
     }
 
@@ -116,5 +109,39 @@ public class UserContext {
 
     public boolean isPermittedEditArticle(Long userId, Article article) {
         return article.getAuthor().getId().equals(userId);
+    }
+
+    public JSONObject favoriteArticle(Long userId, String slug) {
+        User userContext = findUser(userId);
+        Article article = getArticle(slug);
+        if (article == null) return null;
+        if (userContext.checkFavorited(article)) {
+
+        } else {
+            userContext.favorite(article);
+            article.upFavoritesCount();
+        }
+        return new JSONObject().put("article", article.toJson(userContext));
+    }
+
+    public JSONObject unfavoriteArticle(Long userId, String slug) {
+        User userContext = findUser(userId);
+        Article article = getArticle(slug);
+        if (article == null) return null;
+        if (userContext.checkFavorited(article)) {
+            userContext.unfavorite(article);
+            article.downFavoritesCount();
+            em.merge(article);
+        }
+        return new JSONObject().put("article", article.toJson(userContext));
+    }
+
+    private Article getArticle(String slug) {
+        try {
+            return em.createQuery("SELECT a FROM Article a WHERE a.slug = :slug", Article.class)
+                    .setParameter("slug", slug).getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
     }
 }

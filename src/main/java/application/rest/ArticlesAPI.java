@@ -201,15 +201,23 @@ public class ArticlesAPI {
     /* Favorite Article */
     @POST
     @Path("/{slug}/favorite")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
     public Response favorite(@PathParam("slug") String slug) {
-        return Response.ok().build();
+        return wrapResponseArticle(uc.favoriteArticle(jwt.getClaim("id"), slug));
+
     }
 
     /* Unfavorite Article */
+    // FOR SOME REASON THIS DELETES THE ARTICLE??
     @DELETE
     @Path("/{slug}/favorite")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
     public Response unfavorite(@PathParam("slug") String slug) {
-        return Response.ok().build();
+        return wrapResponseArticle(uc.unfavoriteArticle(jwt.getClaim("id"), slug));
     }
 
     private Response wrapResponseArticle(JSONObject responseBody) {

@@ -3,6 +3,7 @@ package core.user;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -29,7 +30,8 @@ public abstract class AbstractUser {
         inverseJoinColumns = { @JoinColumn(name = "follower", referencedColumnName = "USER_ID")})
     protected Set<User> followedBy = new HashSet<>();
 
-    @OneToMany
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    @JoinColumn(name = "article")
     protected Set<Article> favorited = new HashSet<>();
 
     @Column(name = "email", nullable = false, unique = true)
