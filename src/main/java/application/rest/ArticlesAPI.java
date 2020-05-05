@@ -97,7 +97,6 @@ public class ArticlesAPI {
     }
 
     /* Create Article */
-    // 1.0 Rework following logic probably
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -135,24 +134,44 @@ public class ArticlesAPI {
     /* Update Article */
     @PUT
     @Path("/{slug}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
     public Response updateArticle(@PathParam("slug") String slug, CreateArticle requestBody) {
-        Article body = articleDao.updateArticle(requestBody.getArticle(), slug);
-
-        if (body == null) {
+        Article article = articleDao.findArticle(slug);
+        if (article == null) {
             return Response.status(Response.Status.NOT_FOUND)
                 .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_FOUND))
                 .build();
         }
-        
-        return Response.status(Response.Status.CREATED)
-            .entity(new JSONObject().put("article", body).toString())
-            .build();
+        // 403 not permitted
+        if (!uc.isPermittedEditArticle(jwt.getClaim("id"), article)) {
+            return Response.status(403)
+                .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_YOURS))
+                .build();
+        }
+        Article newArticle = articleDao.updateArticle(article, requestBody.getArticle());
+        JSONObject responseBody = uc.findArticle(jwt.getClaim("id"), newArticle.getSlug());
+        return wrapResponseArticle(responseBody);
     }
 
     /* Delete Article */
     @DELETE
     @Path("/{slug}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
     public Response deleteArticle(@PathParam("slug") String slug) {
+        Article article = articleDao.findArticle(slug);
+        if (article == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_FOUND)).build();
+        }
+        // 403 not permitted
+        if (!uc.isPermittedEditArticle(jwt.getClaim("id"), article)) {
+            return Response.status(403).entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_YOURS))
+                    .build();
+        }
         articleDao.deleteArticle(slug);
         return Response.ok().build();
     }

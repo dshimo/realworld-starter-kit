@@ -160,19 +160,16 @@ public class UsersAPI {
     @Transactional
     public Response update(CreateUser requestBody)
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
-        User body = userDao.updateUser(requestBody.getUser(), jwt.getClaim("id"));
-
+        User body = userDao.updateUser(jwt.getClaim("id"), requestBody.getUser());
         if (body == null) {
             return Response.status(Response.Status.NOT_FOUND)
                 .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
                 .build();
         }
-
         return Response.status(Response.Status.CREATED)
             .entity(wrapUser(body.toJson(), body.getUsername(), body.getId()))
             .build();
     }
-
 
     private String wrapUser(JSONObject user, String username, Long userId)
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {

@@ -113,4 +113,8 @@ public class UserContext {
             .filter(a -> a.getAuthor().checkFollowedBy(userContext))
             .map(a -> a.toJson(userContext)).skip(offset).collect(Collectors.toList());
     }
+
+    public boolean isPermittedEditArticle(Long userId, Article article) {
+        return article.getAuthor().getId().equals(userId);
+    }
 }

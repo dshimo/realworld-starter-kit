@@ -13,6 +13,7 @@ public class ValidationMessages {
     public static final String PROFILE_NOT_FOUND = "profile not found";
     public static final String USER_NOT_FOUND = "user not found";
     public static final String ARTICLE_NOT_FOUND = "article not found";
+    public static final String ARTICLE_NOT_YOURS = "article updating is not yours";
 
     public static String throwError(String message) {
         JSONObject body = new JSONObject();

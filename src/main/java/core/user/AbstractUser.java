@@ -23,12 +23,6 @@ public abstract class AbstractUser {
     @Column(name = "USER_ID")
     private Long USER_ID;
 
-    // @ManyToMany
-    // @JoinTable(name = "FOLLOWING", 
-    //     joinColumns = { @JoinColumn(name = "follower", referencedColumnName = "USER_ID") }, 
-    //     inverseJoinColumns = { @JoinColumn(name = "celeb", referencedColumnName = "USER_ID") })
-    // protected Set<Profile> following = new HashSet<>();
-
     @ManyToMany
     @JoinTable(name = "FOLLOWED_BY",
         joinColumns = { @JoinColumn(name = "celeb", referencedColumnName = "USER_ID") },
@@ -120,24 +114,10 @@ public abstract class AbstractUser {
     public void unfavorite(Article article) {
         favorited.remove(article);
     }
-
-    // public Set<Profile> getFollowing() {
-    //     return following;
-    // }
-
-    // public Boolean checkFollowing(Profile celeb) {
-    //     return following.contains(celeb);
-    // }
-
-    // public void follow(Profile celeb) {
-    //     following.add(celeb);
-    // }
-
-    // public void unfollow(Profile celeb) {
-    //     following.remove(celeb);
-    // }
     
     public void update(String email, String username, String password, String image, String bio) {
+        System.out.println("Updating properties...");
+        
         if (email != null && ! "".equals(email)) {
             System.out.println("Updating email");
             this.email = email;
