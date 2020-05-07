@@ -13,7 +13,9 @@ public class ValidationMessages {
     public static final String PROFILE_NOT_FOUND = "profile not found";
     public static final String USER_NOT_FOUND = "user not found";
     public static final String ARTICLE_NOT_FOUND = "article not found";
+    public static final String ARTICLE_SLUG_EXISTS = "article with simplified slug exists. please change your article title";
     public static final String ARTICLE_NOT_YOURS = "article updating is not yours";
+    public static final String COMMENT_REQUIREMENTS_BLANK = "body must not be empty";
 
     public static String throwError(String message) {
         JSONObject body = new JSONObject();

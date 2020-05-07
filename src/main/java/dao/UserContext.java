@@ -116,7 +116,6 @@ public class UserContext {
         Article article = getArticle(slug);
         if (article == null) return null;
         if (userContext.checkFavorited(article)) {
-
         } else {
             userContext.favorite(article);
             article.upFavoritesCount();
@@ -131,7 +130,6 @@ public class UserContext {
         if (userContext.checkFavorited(article)) {
             userContext.unfavorite(article);
             article.downFavoritesCount();
-            em.merge(article);
         }
         return new JSONObject().put("article", article.toJson(userContext));
     }

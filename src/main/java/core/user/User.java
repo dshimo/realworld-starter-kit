@@ -12,6 +12,11 @@ import core.user.AbstractUser;
 public class User extends AbstractUser {
 
     public JSONObject toJson() {
+        String email = this.getEmail();
+        String username = this.getUsername();
+        String bio = this.getBio();
+        String image = this.getImg();
+
         return new JSONObject()
             .put("email", email)
             .put("username", username)

@@ -28,22 +28,22 @@ public abstract class AbstractUser {
     @JoinTable(name = "FOLLOWED_BY",
         joinColumns = { @JoinColumn(name = "celeb", referencedColumnName = "USER_ID") },
         inverseJoinColumns = { @JoinColumn(name = "follower", referencedColumnName = "USER_ID")})
-    protected Set<User> followedBy = new HashSet<>();
+    private Set<User> followedBy = new HashSet<>();
 
-    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "article")
-    protected Set<Article> favorited = new HashSet<>();
+    @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "favorited")
+    private Set<Article> favorited = new HashSet<>();
 
     @Column(name = "email", nullable = false, unique = true)
-    protected String email;
+    private String email;
     @Column(name = "username", nullable = false, unique = true)
-    protected String username;
+    private String username;
     @Column(name = "userPassword", nullable = false)
     private String password;
     @Column(name = "bio", nullable = true)
-    protected String bio;
+    private String bio;
     @Column(name = "image", nullable = true)
-    protected String image;
+    private String image;
 
     public Long getId() {
         return USER_ID;

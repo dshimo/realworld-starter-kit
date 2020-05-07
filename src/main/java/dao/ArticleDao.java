@@ -8,6 +8,7 @@ import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 
 import core.article.Article;
+import core.comments.Comment;
 
 @RequestScoped
 public class ArticleDao {
@@ -51,4 +52,28 @@ public class ArticleDao {
         return em.createQuery("SELECT a.tagList FROM Article a", String.class).getResultList();
     }
 
+    public Long createComment(String slug, Comment comment) {
+        System.out.println("Creating comment...");
+        try {
+            em.persist(comment);
+            findArticle(slug).addComment(comment);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        System.out.println("CommentID is " + comment.getId());
+        System.out.println("Exiting creating comment...");
+        return comment.getId();
+    }
+
+    public void deleteComment(String slug, Long id) {
+        em.remove(em.find(Comment.class, id));
+    }
+
+    public Comment findComment(Long commentId) {
+        try {
+            return em.find(Comment.class, commentId);
+        } catch (NoResultException e) {
+            return null;
+        }
+    }
 }

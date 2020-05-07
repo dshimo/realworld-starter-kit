@@ -26,6 +26,8 @@ import org.json.JSONObject;
 import application.errors.ValidationMessages;
 import core.article.Article;
 import core.article.CreateArticle;
+import core.comments.CreateComment;
+import core.comments.Comment;
 import core.user.User;
 import dao.ArticleDao;
 import dao.UserContext;
@@ -48,6 +50,7 @@ public class ArticlesAPI {
     // Tag, Author, or Favorited query parameter
     @GET
     @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
     @PermitAll
     public Response listArticles(
             @QueryParam("tag") String tag, 
@@ -73,6 +76,7 @@ public class ArticlesAPI {
     @GET
     @Path("/feed")
     @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
     public Response feedArticles(            
             @QueryParam("limit") @DefaultValue("20") int limit, 
             @QueryParam("offset") @DefaultValue("0") int offset
@@ -86,6 +90,7 @@ public class ArticlesAPI {
     @GET
     @Path("/{slug}")
     @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
     @PermitAll
     public Response getArticle(
             @PathParam("slug") String slug,
@@ -122,6 +127,12 @@ public class ArticlesAPI {
         }
 
         article.initSlug();
+        if (articleDao.findArticle(article.getSlug()) != null) {
+            return Response.status(422)
+                .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_SLUG_EXISTS))
+                .build();
+        }
+
         article.setAuthor(uc.findProfile(userContext.getUsername())); // 2nd DB read
         articleDao.createArticle(article);
 
@@ -180,15 +191,39 @@ public class ArticlesAPI {
     @POST
     @Path("/{slug}/comments")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response addComment(@PathParam("slug") String slug) {
-        return Response.ok().build();
+    @Produces(MediaType.APPLICATION_JSON)
+    @Transactional
+    public Response addComment(@PathParam("slug") String slug, CreateComment createComment) {
+        Comment comment = createComment.getComment();
+        // Required fields
+        if (comment.getBody() == null) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                    .entity(ValidationMessages.throwError(ValidationMessages.COMMENT_REQUIREMENTS_BLANK)).build();
+        }
+
+        User userContext = uc.findUser(jwt.getClaim("id"));
+        if (userContext == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+            .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
+            .build();
+        }
+        comment.setAuthor(uc.findProfile(userContext.getUsername()));
+        Long commentId = articleDao.createComment(slug, comment);
+        JSONObject responseBody = articleDao.findComment(commentId).toJson(userContext);
+        return Response.status(Response.Status.CREATED)
+            .entity(new JSONObject().put("comment", responseBody).toString())
+            .build();
     }
 
     /* Get Comments to an Article */
     @GET
     @Path("/{slug}/comments")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getComments(@PathParam("slug") String slug) {
-        return Response.ok().build();
+        Article article = articleDao.findArticle(slug);
+        List<Comment> comments = article.getComments();
+        return Response.ok(new JSONObject().put("comments", comments).toString()).build();
     }
 
     /* Delete Comments to an Article */
@@ -201,7 +236,6 @@ public class ArticlesAPI {
     /* Favorite Article */
     @POST
     @Path("/{slug}/favorite")
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Response favorite(@PathParam("slug") String slug) {
@@ -210,10 +244,8 @@ public class ArticlesAPI {
     }
 
     /* Unfavorite Article */
-    // FOR SOME REASON THIS DELETES THE ARTICLE??
     @DELETE
     @Path("/{slug}/favorite")
-    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Response unfavorite(@PathParam("slug") String slug) {
