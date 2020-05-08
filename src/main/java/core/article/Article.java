@@ -165,7 +165,7 @@ public class Article {
         }
     }
 
-    public JSONObject toJson(User userContext) {
+    public JSONObject toJson(User currentUser) {
         return new JSONObject()
             .put("slug", slug == null ? JSONObject.NULL : slug).put("title", title)
             .put("description", description)
@@ -174,7 +174,7 @@ public class Article {
             .put("createdAt", createdAt.toInstant())
             .put("updatedAt", updatedAt.toInstant())
             .put("favoritesCount", favoritesCount)
-            .put("favorited", userContext == null ? false : userContext.checkFavorited(this))
-            .put("author", author == null ? JSONObject.NULL : author.toJson(userContext));
+            .put("favorited", currentUser == null ? false : currentUser.checkFavorited(this))
+            .put("author", author == null ? JSONObject.NULL : author.toJson(currentUser));
     }
 }

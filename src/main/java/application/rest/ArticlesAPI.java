@@ -111,24 +111,24 @@ public class ArticlesAPI {
                 .build();
         }
         
-        User userContext = uc.findUser(jwt.getClaim("id"));
-        if (userContext == null) {
+        User currentUser = uc.findUser(jwt.getClaim("id"));
+        if (currentUser == null) {
             return Response.status(Response.Status.NOT_FOUND)
                 .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
                 .build();
         }
 
         article.initSlug();
-        if (articleDao.findArticle(article.getSlug()) != null) {
+        if (slugExists(article.getSlug())) {
             return Response.status(422)
                 .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_SLUG_EXISTS))
                 .build();
         }
 
-        article.setAuthor(uc.findProfile(userContext.getUsername())); // 2nd DB read
+        article.setAuthor(uc.findProfile(currentUser.getUsername()));
         articleDao.createArticle(article);
 
-        JSONObject responseBody = article.toJson(userContext);
+        JSONObject responseBody = article.toJson(currentUser);
         return Response.status(Response.Status.CREATED)
             .entity(new JSONObject().put("article", responseBody).toString())
             .build();
@@ -147,13 +147,19 @@ public class ArticlesAPI {
                 .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_FOUND))
                 .build();
         }
-        // 403 not permitted
         if (!isArticleOwner(jwt.getClaim("id"), article)) {
             return Response.status(403)
                 .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_YOURS))
                 .build();
         }
-        Article newArticle = articleDao.updateArticle(article, requestBody.getArticle());
+        Article newArticle = requestBody.getArticle();
+        newArticle.initSlug();
+        if (slugExists(newArticle.getSlug())) {
+            return Response.status(422)
+            .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_SLUG_EXISTS))
+            .build();
+        }
+        newArticle = articleDao.updateArticle(article, newArticle);
         JSONObject responseBody = uc.findArticleJson(jwt.getClaim("id"), newArticle.getSlug());
         return wrapArticleResponse(responseBody);
     }
@@ -168,12 +174,13 @@ public class ArticlesAPI {
         Article article = articleDao.findArticle(slug);
         if (article == null) {
             return Response.status(Response.Status.NOT_FOUND)
-                    .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_FOUND)).build();
+                .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_FOUND))
+                .build();
         }
-        // 403 not permitted
         if (!isArticleOwner(jwt.getClaim("id"), article)) {
-            return Response.status(403).entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_YOURS))
-                    .build();
+            return Response.status(403)
+                .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_YOURS))
+                .build();
         }
         articleDao.deleteArticle(slug);
         return Response.ok().build();
@@ -190,18 +197,18 @@ public class ArticlesAPI {
         // Required fields
         if (comment.getBody() == null) {
             return Response.status(Response.Status.BAD_REQUEST)
-                    .entity(ValidationMessages.throwError(ValidationMessages.COMMENT_REQUIREMENTS_BLANK)).build();
+                .entity(ValidationMessages.throwError(ValidationMessages.COMMENT_REQUIREMENTS_BLANK))
+                .build();
         }
-
-        User userContext = uc.findUser(jwt.getClaim("id"));
-        if (userContext == null) {
+        User currentUser = uc.findUser(jwt.getClaim("id"));
+        if (currentUser == null) {
             return Response.status(Response.Status.NOT_FOUND)
-            .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
-            .build();
+                .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
+                .build();
         }
-        comment.setAuthor(uc.findProfile(userContext.getUsername()));
+        comment.setAuthor(uc.findProfile(currentUser.getUsername()));
         Long commentId = articleDao.createComment(slug, comment);
-        JSONObject responseBody = articleDao.findComment(commentId).toJson(userContext);
+        JSONObject responseBody = articleDao.findComment(commentId).toJson(currentUser);
         return Response.status(Response.Status.CREATED)
             .entity(new JSONObject().put("comment", responseBody).toString())
             .build();
@@ -214,6 +221,11 @@ public class ArticlesAPI {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getComments(@PathParam("slug") String slug) {
         Article article = articleDao.findArticle(slug);
+        if (article == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_FOUND))
+                .build();
+        }
         List<Comment> comments = article.getComments();
         return Response.ok(new JSONObject().put("comments", comments).toString()).build();
     }
@@ -221,9 +233,28 @@ public class ArticlesAPI {
     /* Delete Comments to an Article */
     @DELETE
     @Path("/{slug}/comments/{id}")
+    @Transactional
     public Response deleteComment(@PathParam("slug") String slug, @PathParam("id") String id) {
         Article article = articleDao.findArticle(slug);
-        article.removeComment(articleDao.findComment(Long.parseLong(id)));
+        if (article == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_FOUND))
+                .build();
+        }
+        Long commentId = Long.parseLong(id);
+        Comment comment = articleDao.findComment(commentId);
+        if (comment == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+            .entity(ValidationMessages.throwError(ValidationMessages.COMMENT_NOT_FOUND))
+            .build();
+        }
+        if (!isCommentOwner(jwt.getClaim("id"), comment)) {
+            return Response.status(403)
+            .entity(ValidationMessages.throwError(ValidationMessages.COMMENT_NOT_YOURS))
+            .build();
+        }
+        article.removeComment(comment);
+        articleDao.deleteComment(article.getSlug(), commentId);
         return Response.ok().build();
     }
 
@@ -234,7 +265,6 @@ public class ArticlesAPI {
     @Transactional
     public Response favorite(@PathParam("slug") String slug) {
         return wrapArticleResponse(uc.favoriteArticle(jwt.getClaim("id"), slug));
-
     }
 
     /* Unfavorite Article */
@@ -247,7 +277,6 @@ public class ArticlesAPI {
     }
 
     // Helper Methods
-
     private Response wrapArticleResponse(JSONObject responseBody) {
         if (responseBody == null) {
             return Response.status(Response.Status.NOT_FOUND)
@@ -257,11 +286,23 @@ public class ArticlesAPI {
     }
 
     private Response wrapArticlesResponse(List<JSONObject> articles) {
+        if (articles == null) {     // Empty list is fine, but if articles is null, something's wrong
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_FOUND)).build();
+        }
         JSONObject responseBody = new JSONObject().put("articles", articles).put("articlesCount", articles.size());
         return Response.ok(responseBody.toString()).build();
     }
 
-    public boolean isArticleOwner(Long userId, Article article) {
+    private boolean isArticleOwner(Long userId, Article article) {
         return article.getAuthor().getId().equals(userId);
+    }
+
+    private boolean isCommentOwner(Long userId, Comment comment) {
+        return comment.getAuthor().getId().equals(userId);
+    }
+
+    private boolean slugExists(String slug) {
+        return articleDao.findArticle(slug) != null;
     }
 }
