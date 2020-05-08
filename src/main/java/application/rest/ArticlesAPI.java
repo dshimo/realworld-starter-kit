@@ -47,7 +47,6 @@ public class ArticlesAPI {
     private JsonWebToken jwt;
 
     /* List Articles */
-    // Tag, Author, or Favorited query parameter
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
@@ -59,20 +58,12 @@ public class ArticlesAPI {
             @QueryParam("limit") @DefaultValue("20") int limit,
             @QueryParam("offset") @DefaultValue("0") int offset
     ) {
-        Long userId = jwt.getClaim("id");
-        List<JSONObject> articles;
-        if (tag == null && author == null && favoritedBy == null) {
-            articles = uc.defaultListArticles(userId, limit, offset); // Maybe redundant at this point
-        } else {
-            articles = uc.sortListArticles(userId, tag, author, favoritedBy, limit, offset);
-        }
-        return wrapResponseArticles(articles);
+        Long userId = (jwt == null) ? null : jwt.getClaim("id");
+        List<JSONObject> articles = uc.filterArticles(userId, tag, author, favoritedBy, limit, offset);
+        return wrapArticlesResponse(articles);
     }
 
     /* Feed Articles */
-    // Take limit and offset query parameters
-    // Authentication required, will return multiple articles created by followed
-    // users, ordered by most recent first.
     @GET
     @Path("/feed")
     @Produces(MediaType.APPLICATION_JSON)
@@ -83,7 +74,7 @@ public class ArticlesAPI {
     ) {
         Long userId = jwt.getClaim("id");
         List<JSONObject> articles = uc.grabFeed(userId, limit, offset);
-        return wrapResponseArticles(articles);
+        return wrapArticlesResponse(articles);
     }
 
     /* Get Article */
@@ -97,8 +88,9 @@ public class ArticlesAPI {
             @QueryParam("limit") @DefaultValue("20") int limit, 
             @QueryParam("offset") @DefaultValue("0") int offset
     ) {
-        JSONObject article = uc.findArticle(jwt.getClaim("id"), slug);
-        return wrapResponseArticle(article);
+        Long userId = (jwt == null) ? null : jwt.getClaim("id");
+        JSONObject article = uc.findArticleJson(userId, slug);
+        return wrapArticleResponse(article);
     }
 
     /* Create Article */
@@ -156,14 +148,14 @@ public class ArticlesAPI {
                 .build();
         }
         // 403 not permitted
-        if (!uc.isPermittedEditArticle(jwt.getClaim("id"), article)) {
+        if (!isArticleOwner(jwt.getClaim("id"), article)) {
             return Response.status(403)
                 .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_YOURS))
                 .build();
         }
         Article newArticle = articleDao.updateArticle(article, requestBody.getArticle());
-        JSONObject responseBody = uc.findArticle(jwt.getClaim("id"), newArticle.getSlug());
-        return wrapResponseArticle(responseBody);
+        JSONObject responseBody = uc.findArticleJson(jwt.getClaim("id"), newArticle.getSlug());
+        return wrapArticleResponse(responseBody);
     }
 
     /* Delete Article */
@@ -179,7 +171,7 @@ public class ArticlesAPI {
                     .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_FOUND)).build();
         }
         // 403 not permitted
-        if (!uc.isPermittedEditArticle(jwt.getClaim("id"), article)) {
+        if (!isArticleOwner(jwt.getClaim("id"), article)) {
             return Response.status(403).entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_YOURS))
                     .build();
         }
@@ -230,6 +222,8 @@ public class ArticlesAPI {
     @DELETE
     @Path("/{slug}/comments/{id}")
     public Response deleteComment(@PathParam("slug") String slug, @PathParam("id") String id) {
+        Article article = articleDao.findArticle(slug);
+        article.removeComment(articleDao.findComment(Long.parseLong(id)));
         return Response.ok().build();
     }
 
@@ -239,7 +233,7 @@ public class ArticlesAPI {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Response favorite(@PathParam("slug") String slug) {
-        return wrapResponseArticle(uc.favoriteArticle(jwt.getClaim("id"), slug));
+        return wrapArticleResponse(uc.favoriteArticle(jwt.getClaim("id"), slug));
 
     }
 
@@ -249,10 +243,12 @@ public class ArticlesAPI {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Response unfavorite(@PathParam("slug") String slug) {
-        return wrapResponseArticle(uc.unfavoriteArticle(jwt.getClaim("id"), slug));
+        return wrapArticleResponse(uc.unfavoriteArticle(jwt.getClaim("id"), slug));
     }
 
-    private Response wrapResponseArticle(JSONObject responseBody) {
+    // Helper Methods
+
+    private Response wrapArticleResponse(JSONObject responseBody) {
         if (responseBody == null) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_FOUND)).build();
@@ -260,8 +256,12 @@ public class ArticlesAPI {
         return Response.ok(responseBody.toString()).build();
     }
 
-    private Response wrapResponseArticles(List<JSONObject> articles) {
+    private Response wrapArticlesResponse(List<JSONObject> articles) {
         JSONObject responseBody = new JSONObject().put("articles", articles).put("articlesCount", articles.size());
         return Response.ok(responseBody.toString()).build();
+    }
+
+    public boolean isArticleOwner(Long userId, Article article) {
+        return article.getAuthor().getId().equals(userId);
     }
 }

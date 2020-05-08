@@ -22,9 +22,8 @@ public class UserContext {
 
     public User findUser(Long userId) {
         try {
-            return userId != null ? em.find(User.class, userId) : null;
+            return (userId != null) ? em.find(User.class, userId) : null;
         } catch (NoResultException e) {
-            System.out.println("UserId returned no results for user");
             return null;
         }
     }
@@ -35,103 +34,93 @@ public class UserContext {
                     .setParameter("username", username)
                     .getSingleResult();
         } catch (NoResultException e) {
-            System.out.println("Profile for username not found: " + username);
             return null;
         }
     }
 
+    public JSONObject findProfileByUsername(Long userId, String username) {
+        User currentUser = findUser(userId);
+        Profile profile = findProfile(username);
+        if (profile == null) return null;
+        return new JSONObject().put("profile", profile.toJson(currentUser));
+    }
+
     public void followProfile(Long userId, String username) {
-        User userContext = findUser(userId);
+        User currentUser = findUser(userId);
         Profile celeb = findProfile(username);
         if (celeb != null) {
-            celeb.followedBy(userContext);
+            celeb.followedBy(currentUser);
         } else {
             return;
         }
     }
 
     public void unfollowProfile(Long userId, String username) {
-        User userContext = findUser(userId);
+        User currentUser = findUser(userId);
         Profile celeb = findProfile(username);
         if (celeb != null) {
-            celeb.unfollowedBy(userContext);
+            celeb.unfollowedBy(currentUser);
         } else {
             return;
         }
     }
 
-    public JSONObject findProfileByUsername(Long userId, String username) {
-        User userContext = findUser(userId);
-        Profile profile = findProfile(username);
-        return new JSONObject().put("profile", profile.toJson(userContext));
-    }
-
-    public JSONObject findArticle(Long userId, String slug) {
-        User userContext = findUser(userId);
+    public JSONObject findArticleJson(Long userId, String slug) {
+        User currentUser = findUser(userId);
         Article article = getArticle(slug);
-        return new JSONObject().put("article", article.toJson(userContext));
+        return new JSONObject().put("article", article.toJson(currentUser));
     }
 
-    public List<JSONObject> defaultListArticles(Long userId, int limit, int offset) {
-        User userContext = findUser(userId);
-        List<Article> rawArticles = em.createQuery("SELECT a FROM Article a ORDER BY a.updatedAt DESC", Article.class)
+    public List<JSONObject> filterArticles(Long userId, String tag, String author, String favorited, int limit, int offset) {
+        User currentUser = findUser(userId);
+        List<Article> articles = em.createQuery("SELECT a FROM Article a ORDER BY a.updatedAt DESC", Article.class)
                 .setMaxResults(limit).getResultList();
-        return rawArticles.stream()
-            .map(a -> a.toJson(userContext)).skip(offset).collect(Collectors.toList());
-    }
 
-    public List<JSONObject> sortListArticles(Long userId, String tag, String author, String favorited, int limit, int offset) {
-        User userContext = findUser(userId);
-        List<Article> rawArticles = em.createQuery("SELECT a FROM Article a ORDER BY a.updatedAt DESC", Article.class)
-                .setMaxResults(limit).getResultList();
-        if (tag != null) {
-            rawArticles = rawArticles.stream().filter(a -> a.getTags().contains(tag)).collect(Collectors.toList());
-        }
-        if (author != null) {
-            rawArticles = rawArticles.stream().filter(a -> a.getAuthor().getUsername().equals(author)).collect(Collectors.toList());
-        }
-        if (favorited != null) {
+        // If any filter is provided, we filter the list
+        if (tag != null || author != null || favorited != null) {
             Profile profile = findProfile(favorited);
-            rawArticles = rawArticles.stream().filter(a -> profile == null ?  false : profile.checkFavorited(a)).collect(Collectors.toList());
+            // Filter in one iteration for tag, author, and favorited
+            // For each parameter, accept if param is null or satisfies condition
+            articles = articles.stream().filter(a -> 
+                (tag == null || a.getTags().contains(tag)) && 
+                (author == null || a.getAuthor().getUsername().equals(author)) && 
+                (favorited == null || (profile == null ? false : profile.checkFavorited(a)))).collect(Collectors.toList());
         }
-        return rawArticles.stream()
-            .map(a -> a.toJson(userContext)).skip(offset).collect(Collectors.toList());
+        return articles.stream()
+            .map(a -> a.toJson(currentUser)).skip(offset).collect(Collectors.toList());
     }
 
     public List<JSONObject> grabFeed(Long userId, int limit, int offset) {
-        User userContext = findUser(userId);
-        List<Article> rawArticles = em.createQuery("SELECT a FROM Article a ORDER BY a.updatedAt DESC", Article.class)
+        User currentUser = findUser(userId);
+        List<Article> articles = em.createQuery("SELECT a FROM Article a ORDER BY a.updatedAt DESC", Article.class)
                 .setMaxResults(limit).getResultList();
-        return rawArticles.stream()
-            .filter(a -> a.getAuthor().checkFollowedBy(userContext))
-            .map(a -> a.toJson(userContext)).skip(offset).collect(Collectors.toList());
-    }
 
-    public boolean isPermittedEditArticle(Long userId, Article article) {
-        return article.getAuthor().getId().equals(userId);
+        return articles.stream()
+            .filter(a -> a.getAuthor().checkFollowedBy(currentUser))
+            .map(a -> a.toJson(currentUser)).skip(offset).collect(Collectors.toList());
     }
 
     public JSONObject favoriteArticle(Long userId, String slug) {
-        User userContext = findUser(userId);
+        User currentUser = findUser(userId);
         Article article = getArticle(slug);
         if (article == null) return null;
-        if (userContext.checkFavorited(article)) {
+        if (currentUser.checkFavorited(article)) {
         } else {
-            userContext.favorite(article);
+            currentUser.favorite(article);
             article.upFavoritesCount();
         }
-        return new JSONObject().put("article", article.toJson(userContext));
+        return new JSONObject().put("article", article.toJson(currentUser));
     }
 
     public JSONObject unfavoriteArticle(Long userId, String slug) {
-        User userContext = findUser(userId);
+        User currentUser = findUser(userId);
         Article article = getArticle(slug);
         if (article == null) return null;
-        if (userContext.checkFavorited(article)) {
-            userContext.unfavorite(article);
+        if (currentUser.checkFavorited(article)) {
+            currentUser.unfavorite(article);
             article.downFavoritesCount();
         }
-        return new JSONObject().put("article", article.toJson(userContext));
+        return new JSONObject().put("article", article.toJson(currentUser));
     }
 
     private Article getArticle(String slug) {
