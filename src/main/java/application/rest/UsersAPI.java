@@ -55,10 +55,11 @@ public class UsersAPI {
         User user = requestBody.getUser();
         String username = user.getUsername();
         String email = user.getEmail();
+        String password = user.getPassword();
 
-        // Consider error checking for null
         // Required fields
-        if (username.equals("") || email.equals("") || user.getPassword().equals("")) {
+        if (username == null || email == null || password == null || 
+            username.equals("") || email.equals("") || password.equals("")) {
             return Response.status(422)
                 .entity(ValidationMessages.throwError(ValidationMessages.REGISTRATION_REQUIREMENTS_BLANK))
                 .build();
@@ -89,7 +90,9 @@ public class UsersAPI {
         String email = loginInfo.getEmail();
         String password = loginInfo.getPassword();
 
-        if (email.equals("") || password.equals("")) {
+        // Required fields
+        if (email == null || password == null ||
+            email.equals("") || password.equals("")) {
             return Response.status(422)
                 .entity(ValidationMessages.throwError(ValidationMessages.LOGIN_REQUIREMENTS_BLANK))
                 .build();

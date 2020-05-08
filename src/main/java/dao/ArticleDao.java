@@ -25,7 +25,6 @@ public class ArticleDao {
         }
     }
 
-    // Consider making slug a unique ID
     public Article findArticle(String slug) {
         try {
             return em.createQuery("SELECT a FROM Article a WHERE a.slug = :slug", Article.class)

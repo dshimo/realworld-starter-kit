@@ -109,7 +109,8 @@ public class ArticlesAPI {
         String articleBody = article.getBody();
         
         // Required fields
-        if (title.equals("") || description.equals("") || articleBody.equals("")) {
+        if (title == null || description == null || articleBody == null ||
+            title.equals("") || description.equals("") || articleBody.equals("")) {
             return Response.status(422)
                 .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_REQUIREMENTS_BLANK))
                 .build();
@@ -197,8 +198,10 @@ public class ArticlesAPI {
     @Transactional
     public Response addComment(@PathParam("slug") String slug, CreateComment createComment) {
         Comment comment = createComment.getComment();
+
         // Required fields
-        if (comment.getBody() == null) {
+        String body = comment.getBody();
+        if (body == null || body.equals("")) {
             return Response.status(Response.Status.BAD_REQUEST)
                 .entity(ValidationMessages.throwError(ValidationMessages.COMMENT_REQUIREMENTS_BLANK))
                 .build();
