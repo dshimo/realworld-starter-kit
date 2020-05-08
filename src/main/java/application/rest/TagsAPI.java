@@ -1,8 +1,6 @@
 package application.rest;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
@@ -26,8 +24,7 @@ public class TagsAPI {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getTags() {
-        List<String> tagListList = articleDao.getTags();
-        // Make set
-        return Response.ok(new JSONObject().put("tags", tagListList).toString()).build();
+        List<String> tags = articleDao.getTags();
+        return Response.ok(new JSONObject().put("tags", tags).toString()).build();
     }
 }

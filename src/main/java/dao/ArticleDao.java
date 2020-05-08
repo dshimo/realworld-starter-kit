@@ -1,6 +1,7 @@
 package dao;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.enterprise.context.RequestScoped;
 import javax.persistence.EntityManager;
@@ -46,7 +47,9 @@ public class ArticleDao {
     }
 
     public List<String> getTags() {
-        return em.createQuery("SELECT a.tagList FROM Article a", String.class).getResultList();
+        List<List<String>> tagListList = em.createQuery("SELECT a.tagList FROM Article a").getResultList();
+        List<String> tags = tagListList.stream().flatMap(tagList -> tagList.stream()).distinct().collect(Collectors.toList());
+        return tags;
     }
 
     public Long createComment(String slug, Comment comment) {

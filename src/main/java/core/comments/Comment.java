@@ -3,7 +3,6 @@ package core.comments;
 import java.sql.Timestamp;
 import java.time.Instant;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
