@@ -32,42 +32,40 @@ public class ProfilesAPI {
     private JsonWebToken jwt;
 
     /* Get Profile */
-    // Auth optional 
     @GET
     @Path("/{username}")
-    @PermitAll
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
+    @PermitAll
     public Response getProfile(@PathParam("username") String username) {
-        return wrapResponse(jwt.getClaim("id"), username);
+        Long userId = (jwt == null) ? null : jwt.getClaim("id");
+        return wrapResponse(userId, username);
     }
 
     /* Follow User */
-    // Auth Required
     @POST
     @Path("/{username}/follow")
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Response followUser(@PathParam("username") String username) {
-        Long userId = jwt.getClaim("id");
+        Long userId = (jwt == null) ? null : jwt.getClaim("id");
         uc.followProfile(userId, username);
         return wrapResponse(userId, username);
     }
 
     /* Unfollow User */
-    // Auth Required
     @DELETE
     @Path("/{username}/follow")
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Response unfollowUser(@PathParam("username") String username) {
-        Long userId = jwt.getClaim("id");
+        Long userId = (jwt == null) ? null : jwt.getClaim("id");
         uc.unfollowProfile(userId, username);
         return wrapResponse(userId, username);
     }
 
-    private Response wrapResponse(Long id, String username) {
-        JSONObject responseBody = uc.findProfileByUsername(id, username);
+    private Response wrapResponse(Long userId, String username) {
+        JSONObject responseBody = uc.findProfileByUsername(userId, username);
         if (responseBody == null) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(ValidationMessages.throwError(ValidationMessages.PROFILE_NOT_FOUND)).build();
@@ -75,5 +73,4 @@ public class ProfilesAPI {
             return Response.ok(responseBody.toString()).build();
         }
     }
-
 }

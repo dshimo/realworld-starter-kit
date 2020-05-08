@@ -124,7 +124,6 @@ public class ArticlesAPI {
                 .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_SLUG_EXISTS))
                 .build();
         }
-
         article.setAuthor(uc.findProfile(currentUser.getUsername()));
         articleDao.createArticle(article);
 
@@ -182,7 +181,7 @@ public class ArticlesAPI {
                 .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_NOT_YOURS))
                 .build();
         }
-        articleDao.deleteArticle(slug);
+        articleDao.deleteArticle(article);
         return Response.ok().build();
     }
 
@@ -230,7 +229,7 @@ public class ArticlesAPI {
         return Response.ok(new JSONObject().put("comments", comments).toString()).build();
     }
 
-    /* Delete Comments to an Article */
+    /* Delete Comment to an Article */
     @DELETE
     @Path("/{slug}/comments/{id}")
     @Transactional

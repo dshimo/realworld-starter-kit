@@ -14,39 +14,31 @@ public class UserDao {
     private EntityManager em;
 
     public void createUser(User user) {
-        System.out.println("Entering createUser");
         try {
             em.persist(user);
         } catch(Exception e) {
             e.printStackTrace();
         }
-        System.out.println("Exiting createUser");
     }
 
     public void deleteUser(Long userId) {
         em.remove(em.find(User.class, userId));
     }
 
-    public User updateUser(Long userId, User newUser) {
-        System.out.println("Updating user");
-
-        User dbUser = findUser(userId);
-        if (dbUser == null) return null;
-        if (dbUser.getId().equals(userId)) {
-            // Conclude same user and begin update;
-            System.out.println("I believe these to have the same ID");
-            dbUser.update(newUser.getEmail(), 
-                          newUser.getUsername(), 
-                          newUser.getPassword(), 
-                          newUser.getImg(), 
-                          newUser.getBio());
-        }
-        return em.merge(dbUser);
+    public User updateUser(User user, User newUser) {
+        if (user == null) return null;
+        user.update(
+            newUser.getEmail(), 
+            newUser.getUsername(), 
+            newUser.getPassword(), 
+            newUser.getImg(), 
+            newUser.getBio());
+        return em.merge(user);
     }
 
-    public User findUser(Long userID) {
+    public User findUser(Long userId) {
         try {
-            return em.find(User.class, userID);
+            return (userId == null) ? null: em.find(User.class, userId);
         } catch (NoResultException e) {
             return null;
         }

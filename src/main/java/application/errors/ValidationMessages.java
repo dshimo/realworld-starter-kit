@@ -18,7 +18,7 @@ public class ValidationMessages {
     public static final String COMMENT_REQUIREMENTS_BLANK = "body must not be empty";
     public static final String COMMENT_NOT_FOUND = "comment not found";
     public static final String COMMENT_NOT_YOURS = "comment does not belong to you";
-
+    public static final String UPDATING_DIFFERENT_USER = "shouldn't update user that's not you";
     public static String throwError(String message) {
         JSONObject body = new JSONObject();
 

@@ -36,16 +36,13 @@ public class ArticleDao {
     }
 
     public Article updateArticle(Article article, Article updates) {
-        Article dbArticle = findArticle(article.getSlug());
-        if (dbArticle == null) {
-            return null;
-        }
-        dbArticle.update(updates.getTitle(), updates.getDescription(), updates.getBody());
-        return em.merge(dbArticle);
+        if (article == null) return null;
+        article.update(updates.getTitle(), updates.getDescription(), updates.getBody());
+        return em.merge(article);
     }
 
-    public void deleteArticle(String slug) {
-        em.remove(findArticle(slug));
+    public void deleteArticle(Article article) {
+        em.remove(article);
     }
 
     public List<String> getTags() {
@@ -53,20 +50,17 @@ public class ArticleDao {
     }
 
     public Long createComment(String slug, Comment comment) {
-        System.out.println("Creating comment...");
         try {
-            em.persist(comment);
             findArticle(slug).addComment(comment);
+            em.persist(comment);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println("CommentID is " + comment.getId());
-        System.out.println("Exiting creating comment...");
         return comment.getId();
     }
 
-    public void deleteComment(String slug, Long id) {
-        em.remove(em.find(Comment.class, id));
+    public void deleteComment(String slug, Long commentId) {
+        em.remove(findComment(commentId));
     }
 
     public Comment findComment(Long commentId) {

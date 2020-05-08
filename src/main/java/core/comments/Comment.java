@@ -32,7 +32,7 @@ public class Comment {
     private Timestamp updatedAt;
     @Column(name = "body", nullable = false)
     private String body;
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     @JoinColumn(name = "author")
     private Profile author;
 

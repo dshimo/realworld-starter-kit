@@ -26,8 +26,8 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import application.errors.ValidationMessages;
-import core.user.User;
 import core.user.CreateUser;
+import core.user.User;
 import dao.UserDao;
 import security.JwtGenerator;
 
@@ -35,7 +35,6 @@ import security.JwtGenerator;
 @Path("/")
 @RolesAllowed("users")
 public class UsersAPI {
-
     private JwtGenerator tknGenerator = new JwtGenerator();
 
     @Inject
@@ -53,8 +52,6 @@ public class UsersAPI {
     @Transactional
     public Response createUser(CreateUser requestBody)
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
-
-        System.out.println("Creating simple user.");
         User user = requestBody.getUser();
         String username = user.getUsername();
         String email = user.getEmail();
@@ -66,27 +63,18 @@ public class UsersAPI {
                 .entity(ValidationMessages.throwError(ValidationMessages.REGISTRATION_REQUIREMENTS_BLANK))
                 .build();
         }
-
-        // Check duplicate username/email in database
         if (userDao.userExists(username)) {
-            System.out.println("User exists!");
             return Response.status(422)
                 .entity(ValidationMessages.throwError(ValidationMessages.DUPLICATE_USERNAME))
                 .build();
         }
         if (userDao.emailExists(email)) {
-            System.out.println("Email exists!");
             return Response.status(422)
                 .entity(ValidationMessages.throwError(ValidationMessages.DUPLICATE_EMAIL))
                 .build();
         }
-
-        userDao.createUser(user); // Persist
-        Long userId = user.getId();
-
-        return Response.status(Response.Status.CREATED)
-            .entity(wrapUser(userDao.findUser(userId).toJson(), username, userId))
-            .build();
+        userDao.createUser(user);
+        return wrapUserResponse(user);
     }
 
     /* Login */
@@ -97,9 +85,6 @@ public class UsersAPI {
     @Produces(MediaType.APPLICATION_JSON)
     public Response loginUser(CreateUser requestBody)
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
-
-        System.out.println("Logging in");
-
         User loginInfo = requestBody.getUser();
         String email = loginInfo.getEmail();
         String password = loginInfo.getPassword();
@@ -109,24 +94,19 @@ public class UsersAPI {
                 .entity(ValidationMessages.throwError(ValidationMessages.LOGIN_REQUIREMENTS_BLANK))
                 .build();
         }
-
-        if (! userDao.emailExists(email)) {
+        if (!userDao.emailExists(email)) {
             return Response.status(Response.Status.NOT_FOUND)
                 .entity(ValidationMessages.throwError(ValidationMessages.EMAIL_NOT_FOUND))
                 .build();
         }
 
         User user = userDao.login(loginInfo.getEmail(), loginInfo.getPassword());
-        JSONObject body = user.toJson();
-        if (body == null) {
+        if (user == null) {
             return Response.status(422)
                 .entity(ValidationMessages.throwError(ValidationMessages.LOGIN_FAIL))
                 .build();
         }
-
-        return Response.status(Response.Status.CREATED)
-            .entity(wrapUser(body, body.getString("username"), user.getId()))
-            .build();
+        return wrapUserResponse(user);
     }
 
     /* Current User */
@@ -136,20 +116,14 @@ public class UsersAPI {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getCurrent() throws InvalidTokenException, InvalidConsumerException, JSONException, JwtException,
             InvalidBuilderException, InvalidClaimException, KeyException {
-
-        String username = jwt.getSubject();
-        Long id = jwt.getClaim("id");
-        User jwtUser = userDao.findUser(id);
-
-        if (jwtUser == null) {
+        Long userId = (jwt == null) ? null : jwt.getClaim("id");
+        User currentUser = userDao.findUser(userId);
+        if (currentUser == null) {
             return Response.status(Response.Status.NOT_FOUND)
                 .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
                 .build();
         }
-
-        return Response.status(Response.Status.ACCEPTED)
-            .entity(wrapUser(jwtUser.toJson(), username, id))
-            .build();
+        return wrapUserResponse(currentUser);
     }
 
     /* Update User */
@@ -160,26 +134,38 @@ public class UsersAPI {
     @Transactional
     public Response update(CreateUser requestBody)
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
-        User body = userDao.updateUser(jwt.getClaim("id"), requestBody.getUser());
-        if (body == null) {
+        Long userId = (jwt == null) ? null : jwt.getClaim("id");
+        User currentUser = userDao.findUser(userId);
+        if (currentUser == null) {
             return Response.status(Response.Status.NOT_FOUND)
                 .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
                 .build();
         }
-        return Response.status(Response.Status.CREATED)
-            .entity(wrapUser(body.toJson(), body.getUsername(), body.getId()))
-            .build();
+        if (!userId.equals(currentUser.getId())) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(ValidationMessages.throwError(ValidationMessages.UPDATING_DIFFERENT_USER))
+                .build();
+        }
+        User newUser = userDao.updateUser(currentUser, requestBody.getUser());
+        return wrapUserResponse(newUser);
     }
 
-    private String wrapUser(JSONObject user, String username, Long userId)
+    // Helper methods
+    private Response wrapUserResponse(User user)
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
-        user.put("token", generateToken(username, userId));
-        return new JSONObject().put("user", user).toString();
+        if (user == null) {
+            return Response.status(Response.Status.NOT_FOUND)
+                .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
+                .build();
+        }
+        JSONObject responseBody = new JSONObject().put("user", 
+            user.toJson().put("token", generateToken(user.getUsername(), user.getId())));
+        return Response.ok(responseBody.toString())
+            .build();
     }
 
     private String generateToken(String username, Long userId)
             throws JSONException, JwtException, InvalidBuilderException, InvalidClaimException, KeyException {
-        System.out.println("Generating Token...");
         return tknGenerator.getToken(username, userId);
     }
 
