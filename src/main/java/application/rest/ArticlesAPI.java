@@ -31,6 +31,7 @@ import core.comments.Comment;
 import core.user.User;
 import dao.ArticleDao;
 import dao.UserContext;
+import dao.UserDao;
 
 @RequestScoped
 @Path("/articles")
@@ -42,6 +43,9 @@ public class ArticlesAPI {
 
     @Inject
     private ArticleDao articleDao;
+
+    @Inject
+    private UserDao userDao;
 
     @Inject
     private JsonWebToken jwt;
@@ -111,7 +115,7 @@ public class ArticlesAPI {
                 .build();
         }
         
-        User currentUser = uc.findUser(jwt.getClaim("id"));
+        User currentUser = userDao.findUser(jwt.getClaim("id"));
         if (currentUser == null) {
             return Response.status(Response.Status.NOT_FOUND)
                 .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
@@ -124,7 +128,7 @@ public class ArticlesAPI {
                 .entity(ValidationMessages.throwError(ValidationMessages.ARTICLE_SLUG_EXISTS))
                 .build();
         }
-        article.setAuthor(uc.findProfile(currentUser.getUsername()));
+        article.setAuthor(userDao.findProfile(currentUser.getUsername()));
         articleDao.createArticle(article);
 
         JSONObject responseBody = article.toJson(currentUser);
@@ -199,13 +203,13 @@ public class ArticlesAPI {
                 .entity(ValidationMessages.throwError(ValidationMessages.COMMENT_REQUIREMENTS_BLANK))
                 .build();
         }
-        User currentUser = uc.findUser(jwt.getClaim("id"));
+        User currentUser = userDao.findUser(jwt.getClaim("id"));
         if (currentUser == null) {
             return Response.status(Response.Status.NOT_FOUND)
                 .entity(ValidationMessages.throwError(ValidationMessages.USER_NOT_FOUND))
                 .build();
         }
-        comment.setAuthor(uc.findProfile(currentUser.getUsername()));
+        comment.setAuthor(userDao.findProfile(currentUser.getUsername()));
         Long commentId = articleDao.createComment(slug, comment);
         JSONObject responseBody = articleDao.findComment(commentId).toJson(currentUser);
         return Response.status(Response.Status.CREATED)
@@ -263,7 +267,7 @@ public class ArticlesAPI {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Response favorite(@PathParam("slug") String slug) {
-        return wrapArticleResponse(uc.favoriteArticle(jwt.getClaim("id"), slug));
+        return wrapArticleResponse(uc.favoriteArticleJson(jwt.getClaim("id"), slug));
     }
 
     /* Unfavorite Article */
@@ -272,7 +276,7 @@ public class ArticlesAPI {
     @Produces(MediaType.APPLICATION_JSON)
     @Transactional
     public Response unfavorite(@PathParam("slug") String slug) {
-        return wrapArticleResponse(uc.unfavoriteArticle(jwt.getClaim("id"), slug));
+        return wrapArticleResponse(uc.unfavoriteArticleJson(jwt.getClaim("id"), slug));
     }
 
     // Helper Methods

@@ -21,6 +21,8 @@ public class TagsAPI {
     @Inject
     private ArticleDao articleDao;
 
+    /* Get Tags */
+    // Will return list of unique tags
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getTags() {

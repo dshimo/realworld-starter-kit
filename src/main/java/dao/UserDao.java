@@ -5,6 +5,7 @@ import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.PersistenceContext;
 
+import core.user.Profile;
 import core.user.User;
 
 @RequestScoped
@@ -44,6 +45,16 @@ public class UserDao {
         }
     }
 
+    public Profile findProfile(String username) {
+        try {
+            return em.createQuery("SELECT p FROM Profile p WHERE p.username = :username", Profile.class)
+                    .setParameter("username", username)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
+    }
+
     public User login(String email, String password) {
         return em.createQuery("SELECT u FROM User u WHERE u.email = :email AND u.password = :password", User.class)
                 .setParameter("email", email)
@@ -52,13 +63,13 @@ public class UserDao {
     }
 
     public boolean userExists(String username) {
-        return (Long) em.createQuery("SELECT COUNT(u.USER_ID) FROM User u WHERE u.username = :username")
+        return (int) em.createQuery("SELECT COUNT(u.USER_ID) FROM User u WHERE u.username = :username")
                 .setParameter("username", username)
                 .getSingleResult() > 0;
     }
 
     public boolean emailExists(String email) {
-        return (Long) em.createQuery("SELECT COUNT(u.USER_ID) FROM User u WHERE u.email = :email")
+        return (int) em.createQuery("SELECT COUNT(u.USER_ID) FROM User u WHERE u.email = :email")
                 .setParameter("email", email)
                 .getSingleResult() > 0;
     }

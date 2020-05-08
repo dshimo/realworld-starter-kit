@@ -42,7 +42,7 @@ public class ProfilesAPI {
         return wrapResponse(userId, username);
     }
 
-    /* Follow User */
+    /* Follow Profile */
     @POST
     @Path("/{username}/follow")
     @Produces(MediaType.APPLICATION_JSON)
@@ -53,7 +53,7 @@ public class ProfilesAPI {
         return wrapResponse(userId, username);
     }
 
-    /* Unfollow User */
+    /* Unfollow Profile */
     @DELETE
     @Path("/{username}/follow")
     @Produces(MediaType.APPLICATION_JSON)
@@ -65,7 +65,7 @@ public class ProfilesAPI {
     }
 
     private Response wrapResponse(Long userId, String username) {
-        JSONObject responseBody = uc.findProfileByUsername(userId, username);
+        JSONObject responseBody = uc.findProfileByUsernameJson(userId, username);
         if (responseBody == null) {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity(ValidationMessages.throwError(ValidationMessages.PROFILE_NOT_FOUND)).build();

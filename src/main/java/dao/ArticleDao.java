@@ -18,15 +18,14 @@ public class ArticleDao {
     private EntityManager em;
 
     public void createArticle(Article article) {
-        System.out.println("Creating article...");
         try {
             em.persist(article);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        System.out.println("Exiting creating article...");
     }
 
+    // Consider making slug a unique ID
     public Article findArticle(String slug) {
         try {
             return em.createQuery("SELECT a FROM Article a WHERE a.slug = :slug", Article.class)
@@ -62,15 +61,15 @@ public class ArticleDao {
         return comment.getId();
     }
 
-    public void deleteComment(String slug, Long commentId) {
-        em.remove(findComment(commentId));
-    }
-
     public Comment findComment(Long commentId) {
         try {
             return em.find(Comment.class, commentId);
         } catch (NoResultException e) {
             return null;
         }
+    }
+
+    public void deleteComment(String slug, Long commentId) {
+        em.remove(findComment(commentId));
     }
 }
