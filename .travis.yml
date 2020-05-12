@@ -1,8 +1,8 @@
 language: java
-node:
+node_js:
     - node
 build:
     - mvn clean install
-script:
+test:
     - mvn liberty:start
     - APIURL=http://localhost:9080/api ./utility/run-api-tests.sh
