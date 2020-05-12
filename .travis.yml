@@ -1,5 +1,6 @@
 language: java
-
+node:
+    - node
 build:
     - mvn clean install
 script:
